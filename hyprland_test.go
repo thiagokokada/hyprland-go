@@ -20,11 +20,39 @@ func init() {
 	}
 }
 
-func genParams(param string, nParams int) (params []string) {
-	for i := 0; i < nParams; i++ {
+func genParams(param string, n int) (params []string) {
+	for i := 0; i < n; i++ {
 		params = append(params, param)
 	}
 	return params
+}
+
+func checkEnvironment(t *testing.T) {
+	if c == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+}
+
+func testCommand(t *testing.T, command func() error) {
+	checkEnvironment(t)
+	err := command()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func testCommand1[T any](t *testing.T, command func() (T, error), v any) {
+	checkEnvironment(t)
+	got, err := command()
+	if err != nil {
+		t.Error(err)
+	}
+	if reflect.TypeOf(got) != reflect.TypeOf(v) {
+		t.Error("got wrong type")
+	}
+	if reflect.DeepEqual(got, v) {
+		t.Error("got empty struct")
+	}
 }
 
 func TestMakeRequest(t *testing.T) {
@@ -106,10 +134,7 @@ func TestValidateResponse(t *testing.T) {
 }
 
 func TestRequest(t *testing.T) {
-	if c == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
+	checkEnvironment(t)
 	response, err := c.Request([]byte("dispatch exec"))
 	if err != nil {
 		t.Error(err)
@@ -120,66 +145,23 @@ func TestRequest(t *testing.T) {
 }
 
 func TestActiveWindow(t *testing.T) {
-	if c == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
-	got, err := c.ActiveWindow()
-	if err != nil {
-		t.Error(err)
-	}
-	if reflect.DeepEqual(got, Window{}) {
-		t.Error("got empty struct")
-	}
+	testCommand1(t, c.ActiveWindow, Window{})
 }
 
 func TestActiveWorkspace(t *testing.T) {
-	if c == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
-	got, err := c.ActiveWorkspace()
-	if err != nil {
-		t.Error(err)
-	}
-	if reflect.DeepEqual(got, Workspace{}) {
-		t.Error("got empty struct")
-	}
+	testCommand1(t, c.ActiveWorkspace, Workspace{})
 }
 
 func TestClients(t *testing.T) {
-	if c == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
-	got, err := c.Clients()
-	if err != nil {
-		t.Error(err)
-	}
-	if len(got) == 0 {
-		t.Error("got empty response")
-	}
+	testCommand1(t, c.Clients, []Client{})
 }
 
 func TestCursorPos(t *testing.T) {
-	if c == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
-	got, err := c.CursorPos()
-	if err != nil {
-		t.Error(err)
-	}
-	if reflect.DeepEqual(got, CursorPos{}) {
-		t.Error("got empty struct")
-	}
+	testCommand1(t, c.CursorPos, CursorPos{})
 }
 
 func TestDispatch(t *testing.T) {
-	if c == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
+	checkEnvironment(t)
 	err := c.Dispatch("exec kitty")
 	if err != nil {
 		t.Error(err)
@@ -196,10 +178,7 @@ func TestDispatch(t *testing.T) {
 }
 
 func TestGetOption(t *testing.T) {
-	if c == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
+	checkEnvironment(t)
 	tests := []struct{ option string }{
 		{"general:border_size"},
 		{"gestures:workspace_swipe"},
@@ -219,51 +198,17 @@ func TestGetOption(t *testing.T) {
 }
 
 func TestKill(t *testing.T) {
-	if c == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
-	err := c.Kill()
-	if err != nil {
-		t.Error(err)
-	}
+	testCommand(t, c.Kill)
 }
 
 func TestReload(t *testing.T) {
-	if c == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
-	err := c.Reload()
-	if err != nil {
-		t.Error(err)
-	}
+	testCommand(t, c.Reload)
 }
 
 func TestVersion(t *testing.T) {
-	if c == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
-	got, err := c.Version()
-	if err != nil {
-		t.Error(err)
-	}
-	if reflect.DeepEqual(got, Version{}) {
-		t.Error("got empty struct")
-	}
+	testCommand1(t, c.Version, Version{})
 }
 
 func TestSplash(t *testing.T) {
-	if c == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
-	got, err := c.Splash()
-	if err != nil {
-		t.Error(err)
-	}
-	if len(got) == 0 {
-		t.Error("got empty response")
-	}
+	testCommand1(t, c.Splash, "")
 }
