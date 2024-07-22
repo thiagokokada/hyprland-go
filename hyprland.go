@@ -9,10 +9,12 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"strings"
 )
 
-const BUF_SIZE = 8192
+const (
+	BUF_SIZE     = 8192
+	MAX_COMMANDS = 30
+)
 
 type IPCClient struct {
 	requestConn *net.UnixAddr
@@ -30,31 +32,36 @@ func must(err error) {
 	}
 }
 
-func makeRequest(command string, params []string) ([]byte, error) {
+func makeRequests(command string, params []string) (requests [][]byte, err error) {
 	if command == "" {
 		return nil, errors.New("empty command")
 	}
+
 	if len(params) == 0 {
-		return []byte(command), nil
-	}
-	if len(params) == 1 {
-		return []byte(fmt.Sprintf("%s %s", command, params[0])), nil
+		requests = append(requests, []byte(command))
+	} else if len(params) == 1 {
+		requests = append(requests, []byte(fmt.Sprintf("%s %s", command, params[0])))
+	} else {
+		// Hyprland IPC has a hidden limit for commands, so we are
+		// splitting the commands in multiple requests if the user pass
+		// more commands that it is supported
+		for i := 0; i < len(params); i += MAX_COMMANDS {
+			end := i + MAX_COMMANDS
+			if end > len(params) {
+				end = len(params)
+			}
+
+			var buffer bytes.Buffer
+			buffer.WriteString("[[BATCH]]")
+			for j := i; j < end; j++ {
+				buffer.WriteString(fmt.Sprintf("%s %s;", command, params[j]))
+			}
+
+			requests = append(requests, buffer.Bytes())
+		}
 	}
 
-	var buffer bytes.Buffer
-	buffer.WriteString("[[BATCH]]")
-	for _, p := range params {
-		buffer.WriteString(fmt.Sprintf("%s %s;", command, p))
-	}
-	return buffer.Bytes(), nil
-}
-
-func checkResponse(response []byte) error {
-	trimmedResp := strings.TrimSpace(string(response))
-	if trimmedResp != "ok" {
-		return errors.New(fmt.Sprintf("non-ok response: %s", trimmedResp))
-	}
-	return nil
+	return requests, nil
 }
 
 // Initiate a new client or panic.
@@ -153,14 +160,20 @@ func (c *IPCClient) Request(request []byte) (response []byte, err error) {
 	return response, nil
 }
 
-func (c *IPCClient) Dispatch(commands ...string) ([]byte, error) {
-	request, err := makeRequest("dispatch", commands)
+// Dispatch commands, similar to 'hyprctl dispatch'.
+// Accept multiple commands at the same time, in this case it will use batch
+// mode, similar to 'hyprctl dispatch --batch'.
+func (c *IPCClient) Dispatch(commands ...string) (responses []byte, err error) {
+	requests, err := makeRequests("dispatch", commands)
 	if err != nil {
 		return nil, fmt.Errorf("error while creating request: %w", err)
 	}
-	response, err := c.Request(request)
-	if err != nil {
-		return nil, fmt.Errorf("error while doing request: %w", err)
+	for _, r := range requests {
+		response, err := c.Request(r)
+		if err != nil {
+			return nil, fmt.Errorf("error while doing request: %w", err)
+		}
+		responses = append(responses, response...)
 	}
-	return response, checkResponse(response)
+	return responses, nil
 }

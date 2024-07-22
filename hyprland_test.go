@@ -2,15 +2,29 @@ package hyprland
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 )
 
-var client = MustClient()
+var client *IPCClient
+
+func init() {
+	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") != "" {
+		client = MustClient()
+	}
+}
+
+func genParams(param string, nParams int) (params []string) {
+	for i := 0; i < nParams; i++ {
+		params = append(params, param)
+	}
+	return params
+}
 
 func TestMakeRequest(t *testing.T) {
 	// missing command
-	_, err := makeRequest("", nil)
+	_, err := makeRequests("", nil)
 	if err == nil {
 		t.Error("should have been an error")
 	}
@@ -19,26 +33,57 @@ func TestMakeRequest(t *testing.T) {
 	tests := []struct {
 		command  string
 		params   []string
-		expected string
+		expected []string
 	}{
-		{"command", nil, "command"},
-		{"command", []string{"param0"}, "command param0"},
-		{"command", []string{"param0", "param1"}, "[[BATCH]]command param0;command param1;"},
+		{"command", nil, []string{"command"}},
+		{"command", []string{"param0"}, []string{"command param0"}},
+		{"command", []string{"param0", "param1"}, []string{"[[BATCH]]command param0;command param1;"}},
 	}
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("%v-%v", tt.command, tt.params), func(t *testing.T) {
-			request, err := makeRequest(tt.command, tt.params)
+		t.Run(fmt.Sprintf("tests_%v-%v", tt.command, tt.params), func(t *testing.T) {
+			requests, err := makeRequests(tt.command, tt.params)
 			if err != nil {
 				t.Error(err)
 			}
-			if string(request) != tt.expected {
-				t.Errorf("got: %s, want: %s", request, tt.expected)
+			for i, e := range tt.expected {
+				if string(requests[i]) != e {
+					t.Errorf("got: %s, want: %s", requests[i], e)
+				}
+			}
+		})
+	}
+
+	// test massive amount of parameters
+	massTests := []struct {
+		command  string
+		params   []string
+		expected int
+	}{
+		{"command", genParams("param", 5), 1},
+		{"command", genParams("param", 15), 1},
+		{"command", genParams("param", 30), 1},
+		{"command", genParams("param", 60), 2},
+		{"command", genParams("param", 90), 3},
+		{"command", genParams("param", 100), 4},
+	}
+	for _, tt := range massTests {
+		t.Run(fmt.Sprintf("mass_tests_%v-%d", tt.command, len(tt.params)), func(t *testing.T) {
+			requests, err := makeRequests(tt.command, tt.params)
+			if err != nil {
+				t.Error(err)
+			}
+			if len(requests) != tt.expected {
+				t.Errorf("got: %d, want: %d", len(requests), tt.expected)
 			}
 		})
 	}
 }
 
 func TestRequest(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
 	response, err := client.Request([]byte("dispatch exec kitty"))
 	if err != nil {
 		t.Error(err)
@@ -53,6 +98,10 @@ func TestRequest(t *testing.T) {
 }
 
 func TestDispatch(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
 	response, err := client.Dispatch("exec kitty")
 	if err != nil {
 		t.Error(err)
@@ -63,5 +112,22 @@ func TestDispatch(t *testing.T) {
 	trimmedResponse := strings.TrimSpace(string(response))
 	if trimmedResponse != "ok" {
 		t.Errorf("non-ok response: %s\n", trimmedResponse)
+	}
+}
+
+func TestDispatchMassive(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+	if testing.Short() {
+		t.Skip("skipping slow test")
+	}
+
+	response, err := client.Dispatch(genParams("exec kitty", 40)...)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(response) == 0 {
+		t.Error("empty response")
 	}
 }
