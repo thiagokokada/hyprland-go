@@ -269,6 +269,8 @@ func (c *RequestClient) GetOption(name string) (o Option, err error) {
 }
 
 // Keyword command, similar to 'hyprctl keyword'.
+// Accept multiple commands at the same time, in this case it will use batch
+// mode, similar to 'hyprctl keyword --batch'.
 func (c *RequestClient) Keyword(params ...string) error {
 	response, err := c.doRequest("keyword", params...)
 	if err != nil {
