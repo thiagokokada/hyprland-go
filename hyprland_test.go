@@ -157,6 +157,20 @@ func TestActiveWindow(t *testing.T) {
 	}
 }
 
+func TestClient(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	got, err := client.Clients()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(got) == 0 {
+		t.Error("got empty response")
+	}
+}
+
 func TestGetOption(t *testing.T) {
 	if client == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")

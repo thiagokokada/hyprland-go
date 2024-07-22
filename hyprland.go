@@ -273,6 +273,14 @@ func (c *IPCClient) ActiveWindow() (w Window, err error) {
 	return w, unmarshalResponse(response, &w)
 }
 
+func (c *IPCClient) Clients() (cl []Client, err error) {
+	response, err := c.doRequest("clients")
+	if err != nil {
+		return cl, err
+	}
+	return cl, unmarshalResponse(response, &cl)
+}
+
 // Get option command, similar to 'hyprctl getoption'.
 // Returns an [Option] object.
 func (c *IPCClient) GetOption(name string) (o Option, err error) {
