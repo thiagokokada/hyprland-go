@@ -33,11 +33,14 @@ func checkEnvironment(t *testing.T) {
 	}
 }
 
-func testCommand(t *testing.T, command func() error) {
+func testCommand(t *testing.T, command func() (RawResponse, error)) {
 	checkEnvironment(t)
-	err := command()
+	response, err := command()
 	if err != nil {
 		t.Error(err)
+	}
+	if len(response) == 0 {
+		t.Error("empty response")
 	}
 }
 
@@ -164,16 +167,19 @@ func TestCursorPos(t *testing.T) {
 
 func TestDispatch(t *testing.T) {
 	checkEnvironment(t)
-	err := c.Dispatch("exec kitty")
+	response, err := c.Dispatch("exec kitty")
 	if err != nil {
 		t.Error(err)
+	}
+	if len(response) == 0 {
+		t.Error("empty response")
 	}
 
 	if testing.Short() {
 		t.Skip("skipping slow test")
 	}
 
-	err = c.Dispatch(genParams("exec kitty", 40)...)
+	_, err = c.Dispatch(genParams("exec kitty", 40)...)
 	if err != nil {
 		t.Error(err)
 	}
@@ -202,7 +208,10 @@ func TestGetOption(t *testing.T) {
 
 func TestKeyword(t *testing.T) {
 	checkEnvironment(t)
-	err := c.Keyword("general:border_size 1", "general:border_size 5")
+	response, err := c.Keyword("general:border_size 1", "general:border_size 5")
+	if len(response) == 0 {
+		t.Error("empty response")
+	}
 	if err != nil {
 		t.Error(err)
 	}
@@ -222,9 +231,12 @@ func TestReload(t *testing.T) {
 
 func TestSetCursor(t *testing.T) {
 	checkEnvironment(t)
-	err := c.SetCursor("Nordzy-cursors", 32)
+	response, err := c.SetCursor("Nordzy-cursors", 32)
 	if err != nil {
 		t.Error(err)
+	}
+	if len(response) == 0 {
+		t.Error("empty response")
 	}
 }
 

@@ -250,12 +250,14 @@ func (c *RequestClient) CursorPos() (cu CursorPos, err error) {
 // Dispatch commands, similar to 'hyprctl dispatch'.
 // Accept multiple commands at the same time, in this case it will use batch
 // mode, similar to 'hyprctl dispatch --batch'.
-func (c *RequestClient) Dispatch(params ...string) error {
+// Returns the raw response, that may be useful for further validations,
+// especially when [RequestClient] 'Validation' is set to false.
+func (c *RequestClient) Dispatch(params ...string) (r RawResponse, err error) {
 	response, err := c.doRequest("dispatch", params...)
 	if err != nil {
-		return err
+		return response, err
 	}
-	return c.validateResponse(params, response)
+	return response, c.validateResponse(params, response)
 }
 
 // Get option command, similar to 'hyprctl getoption'.
@@ -271,22 +273,26 @@ func (c *RequestClient) GetOption(name string) (o Option, err error) {
 // Keyword command, similar to 'hyprctl keyword'.
 // Accept multiple commands at the same time, in this case it will use batch
 // mode, similar to 'hyprctl keyword --batch'.
-func (c *RequestClient) Keyword(params ...string) error {
+// Returns the raw response, that may be useful for further validations,
+// especially when [RequestClient] 'Validation' is set to false.
+func (c *RequestClient) Keyword(params ...string) (r RawResponse, err error) {
 	response, err := c.doRequest("keyword", params...)
 	if err != nil {
-		return err
+		return response, err
 	}
-	return c.validateResponse(nil, response)
+	return response, c.validateResponse(nil, response)
 }
 
 // Kill command, similar to 'hyprctl kill'.
 // Will NOT wait for the user to click in the window.
-func (c *RequestClient) Kill() error {
+// Returns the raw response, that may be useful for further validations,
+// especially when [RequestClient] 'Validation' is set to false.
+func (c *RequestClient) Kill() (r RawResponse, err error) {
 	response, err := c.doRequest("kill")
 	if err != nil {
-		return err
+		return response, err
 	}
-	return c.validateResponse(nil, response)
+	return response, c.validateResponse(nil, response)
 }
 
 // Monitors command, similar to 'hyprctl monitors'.
@@ -300,21 +306,25 @@ func (c *RequestClient) Monitors() (m []Monitor, err error) {
 }
 
 // Reload command, similar to 'hyprctl reload'.
-func (c *RequestClient) Reload() error {
+// Returns the raw response, that may be useful for further validations,
+// especially when [RequestClient] 'Validation' is set to false.
+func (c *RequestClient) Reload() (r RawResponse, err error) {
 	response, err := c.doRequest("reload")
 	if err != nil {
-		return err
+		return response, err
 	}
-	return c.validateResponse(nil, response)
+	return response, c.validateResponse(nil, response)
 }
 
 // Set cursor command, similar to 'hyprctl setcursor'.
-func (c *RequestClient) SetCursor(theme string, size int) error {
+// Returns the raw response, that may be useful for further validations,
+// especially when [RequestClient] 'Validation' is set to false.
+func (c *RequestClient) SetCursor(theme string, size int) (r RawResponse, err error) {
 	response, err := c.doRequest("setcursor", fmt.Sprintf("%s %d", theme, size))
 	if err != nil {
-		return err
+		return response, err
 	}
-	return c.validateResponse(nil, response)
+	return response, c.validateResponse(nil, response)
 }
 
 // Splash command, similar to 'hyprctl splash'.
