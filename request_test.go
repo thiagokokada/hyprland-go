@@ -33,7 +33,7 @@ func checkEnvironment(t *testing.T) {
 	}
 }
 
-func testCommand(t *testing.T, command func() (RawResponse, error)) {
+func testCommandRR(t *testing.T, command func() (RawResponse, error)) {
 	checkEnvironment(t)
 	response, err := command()
 	if err != nil {
@@ -44,16 +44,16 @@ func testCommand(t *testing.T, command func() (RawResponse, error)) {
 	}
 }
 
-func testCommand1[T any](t *testing.T, command func() (T, error), v any) {
+func testCommandS[T any](t *testing.T, command func() (T, error), s any) {
 	checkEnvironment(t)
 	got, err := command()
 	if err != nil {
 		t.Error(err)
 	}
-	if reflect.TypeOf(got) != reflect.TypeOf(v) {
+	if reflect.TypeOf(got) != reflect.TypeOf(s) {
 		t.Error("got wrong type")
 	}
-	if reflect.DeepEqual(got, v) {
+	if reflect.DeepEqual(got, s) {
 		t.Error("got empty struct")
 	}
 	t.Log(got)
@@ -138,51 +138,39 @@ func TestValidateResponse(t *testing.T) {
 }
 
 func TestRequest(t *testing.T) {
-	checkEnvironment(t)
-	response, err := c.Request([]byte("dispatch exec"))
-	if err != nil {
-		t.Error(err)
-	}
-	if len(response) == 0 {
-		t.Error("empty response")
-	}
-	t.Log(response)
+	testCommandRR(t, func() (RawResponse, error) {
+		return c.Request([]byte("dispatch exec"))
+	})
 }
 
 func TestActiveWindow(t *testing.T) {
-	testCommand1(t, c.ActiveWindow, Window{})
+	testCommandS(t, c.ActiveWindow, Window{})
 }
 
 func TestActiveWorkspace(t *testing.T) {
-	testCommand1(t, c.ActiveWorkspace, Workspace{})
+	testCommandS(t, c.ActiveWorkspace, Workspace{})
 }
 
 func TestClients(t *testing.T) {
-	testCommand1(t, c.Clients, []Client{})
+	testCommandS(t, c.Clients, []Client{})
 }
 
 func TestCursorPos(t *testing.T) {
-	testCommand1(t, c.CursorPos, CursorPos{})
+	testCommandS(t, c.CursorPos, CursorPos{})
 }
 
 func TestDispatch(t *testing.T) {
-	checkEnvironment(t)
-	response, err := c.Dispatch("exec kitty")
-	if err != nil {
-		t.Error(err)
-	}
-	if len(response) == 0 {
-		t.Error("empty response")
-	}
+	testCommandRR(t, func() (RawResponse, error) {
+		return c.Dispatch("exec kitty")
+	})
 
 	if testing.Short() {
 		t.Skip("skipping slow test")
 	}
 
-	_, err = c.Dispatch(genParams("exec kitty", 40)...)
-	if err != nil {
-		t.Error(err)
-	}
+	testCommandRR(t, func() (RawResponse, error) {
+		return c.Dispatch(genParams("exec kitty", 40)...)
+	})
 }
 
 func TestGetOption(t *testing.T) {
@@ -194,60 +182,45 @@ func TestGetOption(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("mass_tests_%v", tt.option), func(t *testing.T) {
-			got, err := c.GetOption(tt.option)
-			if err != nil {
-				t.Error(err)
-			}
-			if reflect.DeepEqual(got, Option{}) {
-				t.Error("got empty struct")
-			}
-			t.Log(got)
+			testCommandS(t, func() (Option, error) {
+				return c.GetOption(tt.option)
+			}, Option{})
 		})
 	}
 }
 
 func TestKeyword(t *testing.T) {
-	checkEnvironment(t)
-	response, err := c.Keyword("general:border_size 1", "general:border_size 5")
-	if len(response) == 0 {
-		t.Error("empty response")
-	}
-	if err != nil {
-		t.Error(err)
-	}
+	testCommandRR(t, func() (RawResponse, error) {
+		return c.Keyword("general:border_size 1", "general:border_size 5")
+	})
 }
 
 func TestKill(t *testing.T) {
-	testCommand(t, c.Kill)
+	testCommandRR(t, c.Kill)
 }
 
 func TestMonitors(t *testing.T) {
-	testCommand1(t, c.Monitors, []Monitor{})
+	testCommandS(t, c.Monitors, []Monitor{})
 }
 
 func TestReload(t *testing.T) {
-	testCommand(t, c.Reload)
+	testCommandRR(t, c.Reload)
 }
 
 func TestSetCursor(t *testing.T) {
-	checkEnvironment(t)
-	response, err := c.SetCursor("Nordzy-cursors", 32)
-	if err != nil {
-		t.Error(err)
-	}
-	if len(response) == 0 {
-		t.Error("empty response")
-	}
+	testCommandRR(t, func() (RawResponse, error) {
+		return c.SetCursor("Nordzy-cursors", 32)
+	})
 }
 
 func TestSplash(t *testing.T) {
-	testCommand1(t, c.Splash, "")
+	testCommandS(t, c.Splash, "")
 }
 
 func TestWorkspaces(t *testing.T) {
-	testCommand1(t, c.Workspaces, []Workspace{})
+	testCommandS(t, c.Workspaces, []Workspace{})
 }
 
 func TestVersion(t *testing.T) {
-	testCommand1(t, c.Version, Version{})
+	testCommandS(t, c.Version, Version{})
 }
