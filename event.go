@@ -8,6 +8,13 @@ import (
 
 const SEPARATOR = ">>"
 
+// Initiate a new client or panic.
+// This should be the preferred method for user scripts, since it will
+// automatically find the proper socket to connect and use the
+// HYPRLAND_INSTANCE_SIGNATURE for the current user.
+// If you need to connect to arbitrary user instances or need a method that
+// will not panic on error, use [NewEventClient] instead.
+// Experimental: WIP
 func MustEventClient() *EventClient {
 	return must1(NewEventClient(mustSocket(".socket2.sock")))
 }
@@ -15,6 +22,7 @@ func MustEventClient() *EventClient {
 // Initiate a new event client.
 // Receive as parameters a socket that is generally localised in
 // '$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock'.
+// Experimental: WIP
 func NewEventClient(socket string) (*EventClient, error) {
 	conn, err := net.Dial("unix", socket)
 	if err != nil {
@@ -25,6 +33,7 @@ func NewEventClient(socket string) (*EventClient, error) {
 
 // Low-level receive event method, should be avoided unless there is no
 // alternative.
+// Experimental: WIP
 func (c *EventClient) Receive() ([]ReceivedData, error) {
 	buf := make([]byte, BUF_SIZE)
 	n, err := c.conn.Read(buf)
