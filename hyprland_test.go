@@ -97,12 +97,9 @@ func TestDispatch(t *testing.T) {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	response, err := client.Dispatch("exec kitty")
+	err := client.Dispatch("exec kitty")
 	if err != nil {
 		t.Error(err)
-	}
-	if len(response) == 0 {
-		t.Error("empty response")
 	}
 }
 
@@ -114,12 +111,9 @@ func TestDispatchMassive(t *testing.T) {
 		t.Skip("skipping slow test")
 	}
 
-	response, err := client.Dispatch(genParams("exec kitty", 40)...)
+	err := client.Dispatch(genParams("exec kitty", 40)...)
 	if err != nil {
 		t.Error(err)
-	}
-	if len(response) == 0 {
-		t.Error("empty response")
 	}
 }
 
@@ -128,7 +122,18 @@ func TestReload(t *testing.T) {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	response, err := client.Reload()
+	err := client.Reload()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetOption(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	response, err := client.GetOption("general:border_size")
 	if err != nil {
 		t.Error(err)
 	}
@@ -142,12 +147,9 @@ func TestKill(t *testing.T) {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	response, err := client.Kill()
+	err := client.Kill()
 	if err != nil {
 		t.Error(err)
-	}
-	if len(response) == 0 {
-		t.Error("empty response")
 	}
 }
 
@@ -160,14 +162,14 @@ func TestResponseValidation(t *testing.T) {
 
 	// With client.Validate = true, should fail this response
 	client.Validate = true
-	_, err := client.Dispatch("oops")
+	err := client.Dispatch("oops")
 	if err == nil {
 		t.Error("nil error")
 	}
 
 	// With client.Validate = false, should not fail this response
 	client.Validate = false
-	_, err = client.Dispatch("oops")
+	err = client.Dispatch("oops")
 	if err != nil {
 		t.Error(err)
 	}

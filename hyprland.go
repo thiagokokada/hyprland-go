@@ -69,13 +69,17 @@ func prepareRequests(command string, params []string) (requests [][]byte, err er
 	return requests, nil
 }
 
-func (c *IPCClient) validateResponses(params []string, response []byte) error {
+func (c *IPCClient) validateResponses(params []string, responses []byte) error {
 	if !c.Validate {
 		return nil
 	}
 
+	// Empty response
+	if len(responses) == 0 {
+		return errors.New("empty response")
+	}
 	// Count the number of "ok" we got in response
-	got := strings.Count(string(response), "ok")
+	got := strings.Count(string(responses), "ok")
 	want := len(params)
 	// Commands without parameters still have a "ok" response
 	if want == 0 {
@@ -89,7 +93,7 @@ func (c *IPCClient) validateResponses(params []string, response []byte) error {
 				"got ok: %d, want: %d, response: %s",
 				got,
 				want,
-				response,
+				responses,
 			),
 		)
 	}
@@ -108,7 +112,7 @@ func (c *IPCClient) doRequest(command string, params ...string) (responses []byt
 		}
 		responses = append(responses, response...)
 	}
-	return responses, c.validateResponses(params, responses)
+	return responses, nil
 }
 
 // Initiate a new client or panic.
@@ -211,17 +215,38 @@ func (c *IPCClient) Request(request []byte) (response []byte, err error) {
 // Dispatch commands, similar to 'hyprctl dispatch'.
 // Accept multiple commands at the same time, in this case it will use batch
 // mode, similar to 'hyprctl dispatch --batch'.
-func (c *IPCClient) Dispatch(params ...string) ([]byte, error) {
-	return c.doRequest("dispatch", params...)
+func (c *IPCClient) Dispatch(params ...string) error {
+	responses, err := c.doRequest("dispatch", params...)
+	if err != nil {
+		return err
+	}
+	return c.validateResponses(params, responses)
 }
 
 // Reload command, similar to 'hyprctl reload'.
-func (c *IPCClient) Reload() ([]byte, error) {
-	return c.doRequest("reload")
+func (c *IPCClient) Reload() error {
+	responses, err := c.doRequest("reload")
+	if err != nil {
+		return err
+	}
+	return c.validateResponses(nil, responses)
 }
 
 // Kill command, similar to 'hyprctl kill'.
 // Will NOT wait for the user to click in the window.
-func (c *IPCClient) Kill() ([]byte, error) {
-	return c.doRequest("kill")
+func (c *IPCClient) Kill() error {
+	responses, err := c.doRequest("kill")
+	if err != nil {
+		return err
+	}
+	return c.validateResponses(nil, responses)
+}
+
+// Get option command, similar to 'hyprctl getoption'.
+func (c *IPCClient) GetOption(name string) (string, error) {
+	response, error := c.doRequest("getoption", name)
+	if error != nil {
+		return "", error
+	}
+	return string(response), error
 }
