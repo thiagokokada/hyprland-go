@@ -1,6 +1,22 @@
 package hyprland
 
-// Try to keep this in the same order as the output for `hyprctl` for sanity.
+import "net"
+
+type RawRequest []byte
+
+type RawResponse []byte
+
+// IPCClient is the main struct from hyprland-go.
+// You may want to set 'Validate' as false to avoid (possibly costly)
+// validations, at the expense of not reporting some errors in the IPC.
+type IPCClient struct {
+	Validate    bool
+	requestConn *net.UnixAddr
+	eventConn   net.Conn
+}
+
+// Try to keep struct fields in the same order as the output for `hyprctl` for
+// sanity.
 
 type Client struct {
 	Address        string        `json:"address"`

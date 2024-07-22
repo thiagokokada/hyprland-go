@@ -18,15 +18,6 @@ const (
 	MAX_COMMANDS = 30
 )
 
-// IPCClient is the main struct from hyprland-go.
-// You may want to set 'Validate' as false to avoid (possibly costly)
-// validations, at the expense of not reporting some errors in the IPC.
-type IPCClient struct {
-	Validate    bool
-	requestConn *net.UnixAddr
-	eventConn   net.Conn
-}
-
 func must1[T any](v T, err error) T {
 	must(err)
 	return v
@@ -38,7 +29,7 @@ func must(err error) {
 	}
 }
 
-func prepareRequests(command string, params []string) (requests [][]byte) {
+func prepareRequests(command string, params []string) (requests []RawRequest) {
 	if command == "" {
 		panic("empty command")
 	}
@@ -51,29 +42,29 @@ func prepareRequests(command string, params []string) (requests [][]byte) {
 		// Hyprland IPC has a hidden limit for commands, so we are
 		// splitting the commands in multiple requests if the user pass
 		// more commands that it is supported
-		var buffer bytes.Buffer
+		var buf bytes.Buffer
 		for i := 0; i < len(params); i += MAX_COMMANDS {
 			end := i + MAX_COMMANDS
 			if end > len(params) {
 				end = len(params)
 			}
 
-			buffer.Reset()
-			buffer.WriteString("[[BATCH]]")
+			buf.Reset()
+			buf.WriteString("[[BATCH]]")
 			for j := i; j < end; j++ {
-				buffer.WriteString(command)
-				buffer.WriteString(" ")
-				buffer.WriteString(params[j])
-				buffer.WriteString(";")
+				buf.WriteString(command)
+				buf.WriteString(" ")
+				buf.WriteString(params[j])
+				buf.WriteString(";")
 			}
 
-			requests = append(requests, buffer.Bytes())
+			requests = append(requests, buf.Bytes())
 		}
 	}
 	return requests
 }
 
-func (c *IPCClient) validateResponse(params []string, response []byte) error {
+func (c *IPCClient) validateResponse(params []string, response RawResponse) error {
 	if !c.Validate {
 		return nil
 	}
@@ -105,7 +96,7 @@ func (c *IPCClient) validateResponse(params []string, response []byte) error {
 	return nil
 }
 
-func unmarshalResponse(response []byte, v any) (err error) {
+func unmarshalResponse(response RawResponse, v any) (err error) {
 	if len(response) == 0 {
 		return errors.New("empty response")
 	}
@@ -117,16 +108,19 @@ func unmarshalResponse(response []byte, v any) (err error) {
 	return nil
 }
 
-func (c *IPCClient) doRequest(command string, params ...string) (response []byte, err error) {
+func (c *IPCClient) doRequest(command string, params ...string) (response RawResponse, err error) {
 	requests := prepareRequests(command, params)
+
+	var buf bytes.Buffer
 	for _, req := range requests {
 		resp, err := c.Request(req)
 		if err != nil {
 			return nil, fmt.Errorf("error while doing request: %w", err)
 		}
-		response = append(response, resp...)
+		buf.Write(resp)
 	}
-	return response, nil
+
+	return buf.Bytes(), nil
 }
 
 // Initiate a new client or panic.
@@ -187,7 +181,7 @@ func NewClient(requestSocket, eventSocket string) (*IPCClient, error) {
 // '[]byte("dispatch exec kitty")'.
 // Keep in mind that there is no validation. In case of an invalid request, the
 // response will generally be something different from "ok".
-func (c *IPCClient) Request(request []byte) (response []byte, err error) {
+func (c *IPCClient) Request(request RawRequest) (response RawResponse, err error) {
 	if len(request) == 0 {
 		return nil, errors.New("empty request")
 	}
@@ -207,10 +201,10 @@ func (c *IPCClient) Request(request []byte) (response []byte, err error) {
 	}
 
 	// Get the response back
-	var resp bytes.Buffer
-	buf := make([]byte, BUF_SIZE)
+	var rbuf bytes.Buffer
+	sbuf := make([]byte, BUF_SIZE)
 	for {
-		n, err := conn.Read(buf)
+		n, err := conn.Read(sbuf)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -218,13 +212,13 @@ func (c *IPCClient) Request(request []byte) (response []byte, err error) {
 			return nil, err
 		}
 
-		resp.Write(buf[:n])
+		rbuf.Write(sbuf[:n])
 		if n < BUF_SIZE {
 			break
 		}
 	}
 
-	return resp.Bytes(), nil
+	return rbuf.Bytes(), nil
 }
 
 // Get option command, similar to 'hyprctl activewindow'.
