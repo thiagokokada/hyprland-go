@@ -207,6 +207,7 @@ func (c *IPCClient) Request(request []byte) (response []byte, err error) {
 	}
 
 	// Get the response back
+	var resp bytes.Buffer
 	buf := make([]byte, BUF_SIZE)
 	for {
 		n, err := conn.Read(buf)
@@ -217,13 +218,13 @@ func (c *IPCClient) Request(request []byte) (response []byte, err error) {
 			return nil, err
 		}
 
-		response = append(response, buf[:n]...)
+		resp.Write(buf[:n])
 		if n < BUF_SIZE {
 			break
 		}
 	}
 
-	return response, nil
+	return resp.Bytes(), nil
 }
 
 // Get option command, similar to 'hyprctl activewindow'.
@@ -265,7 +266,6 @@ func (c *IPCClient) CursorPos() (cu []CursorPos, err error) {
 	}
 	return cu, unmarshalResponse(response, &cu)
 }
-
 
 // Dispatch commands, similar to 'hyprctl dispatch'.
 // Accept multiple commands at the same time, in this case it will use batch
