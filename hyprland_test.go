@@ -21,15 +21,6 @@ func genParams(param string, nParams int) (params []string) {
 	return params
 }
 
-func checkResponse(t *testing.T, response []byte) {
-	if len(response) == 0 {
-		t.Error("empty response")
-	}
-	if string(response) != "ok" {
-		t.Errorf("non-ok response: %s\n", response)
-	}
-}
-
 func TestMakeRequest(t *testing.T) {
 	// missing command
 	_, err := prepareRequests("", nil)
@@ -96,7 +87,9 @@ func TestRequest(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	checkResponse(t, response)
+	if len(response) == 0 {
+		t.Error("empty response")
+	}
 }
 
 func TestDispatch(t *testing.T) {
@@ -108,7 +101,9 @@ func TestDispatch(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	checkResponse(t, response)
+	if len(response) == 0 {
+		t.Error("empty response")
+	}
 }
 
 func TestDispatchMassive(t *testing.T) {
@@ -137,7 +132,9 @@ func TestReload(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	checkResponse(t, response)
+	if len(response) == 0 {
+		t.Error("empty response")
+	}
 }
 
 func TestKill(t *testing.T) {
@@ -149,5 +146,29 @@ func TestKill(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	checkResponse(t, response)
+	if len(response) == 0 {
+		t.Error("empty response")
+	}
+}
+
+func TestResponseValidation(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+	// Create its own client to avoid messing the global one
+	client := MustClient()
+
+	// With client.Validate = true, should fail this response
+	client.Validate = true
+	_, err := client.Dispatch("oops")
+	if err == nil {
+		t.Error("nil error")
+	}
+
+	// With client.Validate = false, should not fail this response
+	client.Validate = false
+	_, err = client.Dispatch("oops")
+	if err != nil {
+		t.Error(err)
+	}
 }

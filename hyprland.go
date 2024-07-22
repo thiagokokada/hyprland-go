@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -16,7 +17,11 @@ const (
 	MAX_COMMANDS = 30
 )
 
+// IPCClient is the main struct from hyprland-go.
+// You may want to set 'Validate' as false to avoid (possibly costly)
+// validations, at the expense of not reporting some errors in the IPC.
 type IPCClient struct {
+	Validate    bool
 	requestConn *net.UnixAddr
 	eventConn   net.Conn
 }
@@ -64,6 +69,33 @@ func prepareRequests(command string, params []string) (requests [][]byte, err er
 	return requests, nil
 }
 
+func (c *IPCClient) validateResponses(params []string, response []byte) error {
+	if !c.Validate {
+		return nil
+	}
+
+	// Count the number of "ok" we got in response
+	got := strings.Count(string(response), "ok")
+	want := len(params)
+	// Commands without parameters still have a "ok" response
+	if want == 0 {
+		want = 1
+	}
+	// If we had less than expected number of "ok" results, it means
+	// something went wrong
+	if got < want {
+		return errors.New(
+			fmt.Sprintf(
+				"got ok: %d, want: %d, response: %s",
+				got,
+				want,
+				response,
+			),
+		)
+	}
+	return nil
+}
+
 func (c *IPCClient) doRequest(command string, params ...string) (responses []byte, err error) {
 	requests, err := prepareRequests(command, params)
 	if err != nil {
@@ -76,7 +108,7 @@ func (c *IPCClient) doRequest(command string, params ...string) (responses []byt
 		}
 		responses = append(responses, response...)
 	}
-	return responses, nil
+	return responses, c.validateResponses(params, responses)
 }
 
 // Initiate a new client or panic.
@@ -122,6 +154,7 @@ func NewClient(requestSocket, eventSocket string) (*IPCClient, error) {
 	}
 
 	return &IPCClient{
+		Validate: true,
 		requestConn: &net.UnixAddr{
 			Net:  "unix",
 			Name: requestSocket,
