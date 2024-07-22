@@ -205,6 +205,20 @@ func TestKill(t *testing.T) {
 	}
 }
 
+func TestSplash(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	got, err := client.Splash()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(got) == 0 {
+		t.Error("got empty response")
+	}
+}
+
 func TestResponseValidation(t *testing.T) {
 	if client == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")

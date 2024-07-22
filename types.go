@@ -33,6 +33,11 @@ type Client struct {
 	FocusHistoryId int           `json:"focusHistoryID"`
 }
 
+type CursorPos struct {
+	X int `json:"x"`
+	Y int `json:"y"`
+}
+
 type Workspace struct {
 	WorkspaceType
 	Monitor         string `json:"monitor"`

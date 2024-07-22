@@ -226,50 +226,20 @@ func (c *IPCClient) Request(request []byte) (response []byte, err error) {
 	return response, nil
 }
 
-// Dispatch commands, similar to 'hyprctl dispatch'.
-// Accept multiple commands at the same time, in this case it will use batch
-// mode, similar to 'hyprctl dispatch --batch'.
-func (c *IPCClient) Dispatch(params ...string) error {
-	response, err := c.doRequest("dispatch", params...)
-	if err != nil {
-		return err
-	}
-	return c.validateResponse(params, response)
-}
-
-// Reload command, similar to 'hyprctl reload'.
-func (c *IPCClient) Reload() error {
-	response, err := c.doRequest("reload")
-	if err != nil {
-		return err
-	}
-	return c.validateResponse(nil, response)
-}
-
-// Kill command, similar to 'hyprctl kill'.
-// Will NOT wait for the user to click in the window.
-func (c *IPCClient) Kill() error {
-	response, err := c.doRequest("kill")
-	if err != nil {
-		return err
-	}
-	return c.validateResponse(nil, response)
-}
-
-// Get option command, similar to 'hyprctl activeworkspace'.
-// Returns a [Workspace] object.
-func (c *IPCClient) ActiveWorkspace() (w Workspace, err error) {
-	response, err := c.doRequest("activeworkspace")
+// Get option command, similar to 'hyprctl activewindow'.
+// Returns a [Window] object.
+func (c *IPCClient) ActiveWindow() (w Window, err error) {
+	response, err := c.doRequest("activewindow")
 	if err != nil {
 		return w, err
 	}
 	return w, unmarshalResponse(response, &w)
 }
 
-// Get option command, similar to 'hyprctl activewindow'.
-// Returns a [Window] object.
-func (c *IPCClient) ActiveWindow() (w Window, err error) {
-	response, err := c.doRequest("activewindow")
+// Get option command, similar to 'hyprctl activeworkspace'.
+// Returns a [Workspace] object.
+func (c *IPCClient) ActiveWorkspace() (w Workspace, err error) {
+	response, err := c.doRequest("activeworkspace")
 	if err != nil {
 		return w, err
 	}
@@ -286,6 +256,28 @@ func (c *IPCClient) Clients() (cl []Client, err error) {
 	return cl, unmarshalResponse(response, &cl)
 }
 
+// Get option command, similar to 'hyprctl cursorpos'.
+// Returns a [CursorPos] object.
+func (c *IPCClient) CursorPos() (cu []CursorPos, err error) {
+	response, err := c.doRequest("cursorpos")
+	if err != nil {
+		return cu, err
+	}
+	return cu, unmarshalResponse(response, &cu)
+}
+
+
+// Dispatch commands, similar to 'hyprctl dispatch'.
+// Accept multiple commands at the same time, in this case it will use batch
+// mode, similar to 'hyprctl dispatch --batch'.
+func (c *IPCClient) Dispatch(params ...string) error {
+	response, err := c.doRequest("dispatch", params...)
+	if err != nil {
+		return err
+	}
+	return c.validateResponse(params, response)
+}
+
 // Get option command, similar to 'hyprctl getoption'.
 // Returns an [Option] object.
 func (c *IPCClient) GetOption(name string) (o Option, err error) {
@@ -294,4 +286,33 @@ func (c *IPCClient) GetOption(name string) (o Option, err error) {
 		return o, err
 	}
 	return o, unmarshalResponse(response, &o)
+}
+
+// Kill command, similar to 'hyprctl kill'.
+// Will NOT wait for the user to click in the window.
+func (c *IPCClient) Kill() error {
+	response, err := c.doRequest("kill")
+	if err != nil {
+		return err
+	}
+	return c.validateResponse(nil, response)
+}
+
+// Reload command, similar to 'hyprctl reload'.
+func (c *IPCClient) Reload() error {
+	response, err := c.doRequest("reload")
+	if err != nil {
+		return err
+	}
+	return c.validateResponse(nil, response)
+}
+
+// Get option command, similar to 'hyprctl splash'.
+// Returns an [Option] object.
+func (c *IPCClient) Splash() (s string, err error) {
+	response, err := c.doRequest("splash")
+	if err != nil {
+		return "", err
+	}
+	return string(response), nil
 }
