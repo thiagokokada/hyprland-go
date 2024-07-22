@@ -278,6 +278,16 @@ func (c *RequestClient) Kill() error {
 	return c.validateResponse(nil, response)
 }
 
+// Kill command, similar to 'hyprctl monitors'.
+// Returns a [Monitor] object.
+func (c *RequestClient) Monitors() (m []Monitor, err error) {
+	response, err := c.doRequest("monitors")
+	if err != nil {
+		return m, err
+	}
+	return m, unmarshalResponse(response, &m)
+}
+
 // Reload command, similar to 'hyprctl reload'.
 func (c *RequestClient) Reload() error {
 	response, err := c.doRequest("reload")
@@ -288,13 +298,23 @@ func (c *RequestClient) Reload() error {
 }
 
 // Get option command, similar to 'hyprctl version'.
-// Returns an [Version] object.
+// Returns a [Version] object.
 func (c *RequestClient) Version() (v Version, err error) {
 	response, err := c.doRequest("version")
 	if err != nil {
 		return v, err
 	}
 	return v, unmarshalResponse(response, &v)
+}
+
+// Get option command, similar to 'hyprctl workspaces'.
+// Returns a [Workspace] object.
+func (c *RequestClient) Workspaces() (w []Workspace, err error) {
+	response, err := c.doRequest("workspaces")
+	if err != nil {
+		return w, err
+	}
+	return w, unmarshalResponse(response, &w)
 }
 
 // Get option command, similar to 'hyprctl splash'.

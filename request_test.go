@@ -53,6 +53,7 @@ func testCommand1[T any](t *testing.T, command func() (T, error), v any) {
 	if reflect.DeepEqual(got, v) {
 		t.Error("got empty struct")
 	}
+	t.Log(got)
 }
 
 func TestPrepareRequests(t *testing.T) {
@@ -142,6 +143,7 @@ func TestRequest(t *testing.T) {
 	if len(response) == 0 {
 		t.Error("empty response")
 	}
+	t.Log(response)
 }
 
 func TestActiveWindow(t *testing.T) {
@@ -193,6 +195,7 @@ func TestGetOption(t *testing.T) {
 			if reflect.DeepEqual(got, Option{}) {
 				t.Error("got empty struct")
 			}
+			t.Log(got)
 		})
 	}
 }
@@ -201,8 +204,16 @@ func TestKill(t *testing.T) {
 	testCommand(t, c.Kill)
 }
 
+func TestMonitors(t *testing.T) {
+	testCommand1(t, c.Monitors, []Monitor{})
+}
+
 func TestReload(t *testing.T) {
 	testCommand(t, c.Reload)
+}
+
+func TestWorkspaces(t *testing.T) {
+	testCommand1(t, c.Workspaces, []Workspace{})
 }
 
 func TestVersion(t *testing.T) {
