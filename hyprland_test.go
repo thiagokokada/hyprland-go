@@ -67,6 +67,29 @@ func TestMakeRequest(t *testing.T) {
 	}
 }
 
+
+func TestValidateResponse(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+	// Create its own client to avoid messing the global one
+	client := MustClient()
+
+	// With client.Validate = true, should fail this response
+	client.Validate = true
+	err := client.Dispatch("oops")
+	if err == nil {
+		t.Error("nil error")
+	}
+
+	// With client.Validate = false, should not fail this response
+	client.Validate = false
+	err = client.Dispatch("oops")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestRequest(t *testing.T) {
 	if client == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
@@ -78,56 +101,6 @@ func TestRequest(t *testing.T) {
 	}
 	if len(response) == 0 {
 		t.Error("empty response")
-	}
-}
-
-func TestDispatch(t *testing.T) {
-	if client == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
-	err := client.Dispatch("exec kitty")
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestDispatchMassive(t *testing.T) {
-	if client == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-	if testing.Short() {
-		t.Skip("skipping slow test")
-	}
-
-	err := client.Dispatch(genParams("exec kitty", 40)...)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestReload(t *testing.T) {
-	if client == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
-	err := client.Reload()
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestActiveWorkspace(t *testing.T) {
-	if client == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-
-	got, err := client.ActiveWorkspace()
-	if err != nil {
-		t.Error(err)
-	}
-	if reflect.DeepEqual(got, Workspace{}) {
-		t.Error("got empty struct")
 	}
 }
 
@@ -145,7 +118,21 @@ func TestActiveWindow(t *testing.T) {
 	}
 }
 
-func TestClient(t *testing.T) {
+func TestActiveWorkspace(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	got, err := client.ActiveWorkspace()
+	if err != nil {
+		t.Error(err)
+	}
+	if reflect.DeepEqual(got, Workspace{}) {
+		t.Error("got empty struct")
+	}
+}
+
+func TestClients(t *testing.T) {
 	if client == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
@@ -156,6 +143,40 @@ func TestClient(t *testing.T) {
 	}
 	if len(got) == 0 {
 		t.Error("got empty response")
+	}
+}
+
+func TestCursorPos(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	got, err := client.CursorPos()
+	if err != nil {
+		t.Error(err)
+	}
+	if reflect.DeepEqual(got, CursorPos{}) {
+		t.Error("got empty struct")
+	}
+}
+
+func TestDispatch(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	err := client.Dispatch("exec kitty")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if testing.Short() {
+		t.Skip("skipping slow test")
+	}
+
+	err = client.Dispatch(genParams("exec kitty", 40)...)
+	if err != nil {
+		t.Error(err)
 	}
 }
 
@@ -193,6 +214,18 @@ func TestKill(t *testing.T) {
 	}
 }
 
+func TestReload(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	err := client.Reload()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+
 func TestVersion(t *testing.T) {
 	if client == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
@@ -218,27 +251,5 @@ func TestSplash(t *testing.T) {
 	}
 	if len(got) == 0 {
 		t.Error("got empty response")
-	}
-}
-
-func TestResponseValidation(t *testing.T) {
-	if client == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-	// Create its own client to avoid messing the global one
-	client := MustClient()
-
-	// With client.Validate = true, should fail this response
-	client.Validate = true
-	err := client.Dispatch("oops")
-	if err == nil {
-		t.Error("nil error")
-	}
-
-	// With client.Validate = false, should not fail this response
-	client.Validate = false
-	err = client.Dispatch("oops")
-	if err != nil {
-		t.Error(err)
 	}
 }

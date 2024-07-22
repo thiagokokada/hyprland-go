@@ -253,7 +253,7 @@ func (c *IPCClient) Clients() (cl []Client, err error) {
 
 // Get option command, similar to 'hyprctl cursorpos'.
 // Returns a [CursorPos] object.
-func (c *IPCClient) CursorPos() (cu []CursorPos, err error) {
+func (c *IPCClient) CursorPos() (cu CursorPos, err error) {
 	response, err := c.doRequest("cursorpos")
 	if err != nil {
 		return cu, err
