@@ -1,6 +1,7 @@
 package hyprland
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 )
 
 const BUF_SIZE = 8192
@@ -26,6 +28,33 @@ func must(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func makeRequest(command string, params []string) ([]byte, error) {
+	if command == "" {
+		return nil, errors.New("empty command")
+	}
+	if len(params) == 0 {
+		return []byte(command), nil
+	}
+	if len(params) == 1 {
+		return []byte(fmt.Sprintf("%s %s", command, params[0])), nil
+	}
+
+	var buffer bytes.Buffer
+	buffer.WriteString("[[BATCH]]")
+	for _, p := range params {
+		buffer.WriteString(fmt.Sprintf("%s %s;", command, p))
+	}
+	return buffer.Bytes(), nil
+}
+
+func checkResponse(response []byte) error {
+	trimmedResp := strings.TrimSpace(string(response))
+	if trimmedResp != "ok" {
+		return errors.New(fmt.Sprintf("non-ok response: %s", trimmedResp))
+	}
+	return nil
 }
 
 // Initiate a new client or panic.
@@ -122,4 +151,16 @@ func (c *IPCClient) Request(request []byte) (response []byte, err error) {
 	}
 
 	return response, nil
+}
+
+func (c *IPCClient) Dispatch(commands ...string) ([]byte, error) {
+	request, err := makeRequest("dispatch", commands)
+	if err != nil {
+		return nil, fmt.Errorf("error while creating request: %w", err)
+	}
+	response, err := c.Request(request)
+	if err != nil {
+		return nil, fmt.Errorf("error while doing request: %w", err)
+	}
+	return response, checkResponse(response)
 }
