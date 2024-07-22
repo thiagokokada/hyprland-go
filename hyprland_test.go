@@ -3,7 +3,6 @@ package hyprland
 import (
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 )
 
@@ -22,9 +21,18 @@ func genParams(param string, nParams int) (params []string) {
 	return params
 }
 
+func checkResponse(t *testing.T, response []byte) {
+	if len(response) == 0 {
+		t.Error("empty response")
+	}
+	if string(response) != "ok" {
+		t.Errorf("non-ok response: %s\n", response)
+	}
+}
+
 func TestMakeRequest(t *testing.T) {
 	// missing command
-	_, err := makeRequests("", nil)
+	_, err := prepareRequests("", nil)
 	if err == nil {
 		t.Error("should have been an error")
 	}
@@ -41,7 +49,7 @@ func TestMakeRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("tests_%v-%v", tt.command, tt.params), func(t *testing.T) {
-			requests, err := makeRequests(tt.command, tt.params)
+			requests, err := prepareRequests(tt.command, tt.params)
 			if err != nil {
 				t.Error(err)
 			}
@@ -68,7 +76,7 @@ func TestMakeRequest(t *testing.T) {
 	}
 	for _, tt := range massTests {
 		t.Run(fmt.Sprintf("mass_tests_%v-%d", tt.command, len(tt.params)), func(t *testing.T) {
-			requests, err := makeRequests(tt.command, tt.params)
+			requests, err := prepareRequests(tt.command, tt.params)
 			if err != nil {
 				t.Error(err)
 			}
@@ -84,17 +92,11 @@ func TestRequest(t *testing.T) {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	response, err := client.Request([]byte("dispatch exec kitty"))
+	response, err := client.Request([]byte("dispatch exec"))
 	if err != nil {
 		t.Error(err)
 	}
-	if len(response) == 0 {
-		t.Error("empty response")
-	}
-	trimmedResponse := strings.TrimSpace(string(response))
-	if trimmedResponse != "ok" {
-		t.Errorf("non-ok response: %s\n", trimmedResponse)
-	}
+	checkResponse(t, response)
 }
 
 func TestDispatch(t *testing.T) {
@@ -106,13 +108,7 @@ func TestDispatch(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if len(response) == 0 {
-		t.Error("empty response")
-	}
-	trimmedResponse := strings.TrimSpace(string(response))
-	if trimmedResponse != "ok" {
-		t.Errorf("non-ok response: %s\n", trimmedResponse)
-	}
+	checkResponse(t, response)
 }
 
 func TestDispatchMassive(t *testing.T) {
@@ -130,4 +126,28 @@ func TestDispatchMassive(t *testing.T) {
 	if len(response) == 0 {
 		t.Error("empty response")
 	}
+}
+
+func TestReload(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	response, err := client.Reload()
+	if err != nil {
+		t.Error(err)
+	}
+	checkResponse(t, response)
+}
+
+func TestKill(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	response, err := client.Kill()
+	if err != nil {
+		t.Error(err)
+	}
+	checkResponse(t, response)
 }

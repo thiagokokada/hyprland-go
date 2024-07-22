@@ -32,7 +32,7 @@ func must(err error) {
 	}
 }
 
-func makeRequests(command string, params []string) (requests [][]byte, err error) {
+func prepareRequests(command string, params []string) (requests [][]byte, err error) {
 	if command == "" {
 		return nil, errors.New("empty command")
 	}
@@ -62,6 +62,21 @@ func makeRequests(command string, params []string) (requests [][]byte, err error
 	}
 
 	return requests, nil
+}
+
+func (c *IPCClient) doRequest(command string, params ...string) (responses []byte, err error) {
+	requests, err := prepareRequests(command, params)
+	if err != nil {
+		return nil, fmt.Errorf("error while creating request: %w", err)
+	}
+	for _, r := range requests {
+		response, err := c.Request(r)
+		if err != nil {
+			return nil, fmt.Errorf("error while doing request: %w", err)
+		}
+		responses = append(responses, response...)
+	}
+	return responses, nil
 }
 
 // Initiate a new client or panic.
@@ -163,17 +178,17 @@ func (c *IPCClient) Request(request []byte) (response []byte, err error) {
 // Dispatch commands, similar to 'hyprctl dispatch'.
 // Accept multiple commands at the same time, in this case it will use batch
 // mode, similar to 'hyprctl dispatch --batch'.
-func (c *IPCClient) Dispatch(commands ...string) (responses []byte, err error) {
-	requests, err := makeRequests("dispatch", commands)
-	if err != nil {
-		return nil, fmt.Errorf("error while creating request: %w", err)
-	}
-	for _, r := range requests {
-		response, err := c.Request(r)
-		if err != nil {
-			return nil, fmt.Errorf("error while doing request: %w", err)
-		}
-		responses = append(responses, response...)
-	}
-	return responses, nil
+func (c *IPCClient) Dispatch(params ...string) ([]byte, error) {
+	return c.doRequest("dispatch", params...)
+}
+
+// Reload command, similar to 'hyprctl reload'.
+func (c *IPCClient) Reload() ([]byte, error) {
+	return c.doRequest("reload")
+}
+
+// Kill command, similar to 'hyprctl kill'.
+// Will NOT wait for the user to click in the window.
+func (c *IPCClient) Kill() ([]byte, error) {
+	return c.doRequest("kill")
 }
