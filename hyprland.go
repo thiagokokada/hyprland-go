@@ -38,11 +38,10 @@ func must(err error) {
 	}
 }
 
-func prepareRequests(command string, params []string) (requests [][]byte, err error) {
+func prepareRequests(command string, params []string) (requests [][]byte) {
 	if command == "" {
-		return nil, errors.New("empty command")
+		panic("empty command")
 	}
-
 	switch len(params) {
 	case 0:
 		requests = append(requests, []byte(command))
@@ -62,13 +61,16 @@ func prepareRequests(command string, params []string) (requests [][]byte, err er
 			buffer.Reset()
 			buffer.WriteString("[[BATCH]]")
 			for j := i; j < end; j++ {
-				buffer.WriteString(fmt.Sprintf("%s %s;", command, params[j]))
+				buffer.WriteString(command)
+				buffer.WriteString(" ")
+				buffer.WriteString(params[j])
+				buffer.WriteString(";")
 			}
 
 			requests = append(requests, buffer.Bytes())
 		}
 	}
-	return requests, nil
+	return requests
 }
 
 func (c *IPCClient) validateResponse(params []string, response []byte) error {
@@ -115,10 +117,7 @@ func unmarshalResponse(response []byte, v any) (err error) {
 }
 
 func (c *IPCClient) doRequest(command string, params ...string) (response []byte, err error) {
-	requests, err := prepareRequests(command, params)
-	if err != nil {
-		return nil, fmt.Errorf("error while creating request: %w", err)
-	}
+	requests := prepareRequests(command, params)
 	for _, req := range requests {
 		resp, err := c.Request(req)
 		if err != nil {

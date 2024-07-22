@@ -23,12 +23,6 @@ func genParams(param string, nParams int) (params []string) {
 }
 
 func TestMakeRequest(t *testing.T) {
-	// missing command
-	_, err := prepareRequests("", nil)
-	if err == nil {
-		t.Error("should have been an error")
-	}
-
 	// test params
 	tests := []struct {
 		command  string
@@ -41,10 +35,7 @@ func TestMakeRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("tests_%v-%v", tt.command, tt.params), func(t *testing.T) {
-			requests, err := prepareRequests(tt.command, tt.params)
-			if err != nil {
-				t.Error(err)
-			}
+			requests := prepareRequests(tt.command, tt.params)
 			for i, e := range tt.expected {
 				if string(requests[i]) != e {
 					t.Errorf("got: %s, want: %s", requests[i], e)
@@ -68,10 +59,7 @@ func TestMakeRequest(t *testing.T) {
 	}
 	for _, tt := range massTests {
 		t.Run(fmt.Sprintf("mass_tests_%v-%d", tt.command, len(tt.params)), func(t *testing.T) {
-			requests, err := prepareRequests(tt.command, tt.params)
-			if err != nil {
-				t.Error(err)
-			}
+			requests := prepareRequests(tt.command, tt.params)
 			if len(requests) != tt.expected {
 				t.Errorf("got: %d, want: %d", len(requests), tt.expected)
 			}
