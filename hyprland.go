@@ -2,6 +2,7 @@ package hyprland
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -243,10 +244,16 @@ func (c *IPCClient) Kill() error {
 }
 
 // Get option command, similar to 'hyprctl getoption'.
-func (c *IPCClient) GetOption(name string) (string, error) {
-	response, error := c.doRequest("getoption", name)
-	if error != nil {
-		return "", error
+// Returns an [hyprland.Option] object.
+func (c *IPCClient) GetOption(name string) (Option, error) {
+	var result Option
+	response, err := c.doRequest("getoption", name)
+	if err != nil {
+		return result, err
 	}
-	return string(response), error
+	err = json.Unmarshal(response, &result)
+	if err != nil {
+		return result, fmt.Errorf("error during unmarshal: %w", err)
+	}
+	return result, nil
 }

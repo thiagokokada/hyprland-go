@@ -133,12 +133,18 @@ func TestGetOption(t *testing.T) {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	response, err := client.GetOption("general:border_size")
-	if err != nil {
-		t.Error(err)
+	tests := []struct { option  string }{
+		{"general:border_size"},
+		{"gestures:workspace_swipe"},
+		{"misc:vrr"},
 	}
-	if len(response) == 0 {
-		t.Error("empty response")
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("mass_tests_%v", tt.option), func(t *testing.T) {
+			_, err := client.GetOption(tt.option)
+			if err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
