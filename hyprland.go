@@ -43,21 +43,23 @@ func prepareRequests(command string, params []string) (requests [][]byte, err er
 		return nil, errors.New("empty command")
 	}
 
-	if len(params) == 0 {
+	switch len(params) {
+	case 0:
 		requests = append(requests, []byte(command))
-	} else if len(params) == 1 {
+	case 1:
 		requests = append(requests, []byte(fmt.Sprintf("%s %s", command, params[0])))
-	} else {
+	default:
 		// Hyprland IPC has a hidden limit for commands, so we are
 		// splitting the commands in multiple requests if the user pass
 		// more commands that it is supported
+		var buffer bytes.Buffer
 		for i := 0; i < len(params); i += MAX_COMMANDS {
 			end := i + MAX_COMMANDS
 			if end > len(params) {
 				end = len(params)
 			}
 
-			var buffer bytes.Buffer
+			buffer.Reset()
 			buffer.WriteString("[[BATCH]]")
 			for j := i; j < end; j++ {
 				buffer.WriteString(fmt.Sprintf("%s %s;", command, params[j]))
@@ -66,7 +68,6 @@ func prepareRequests(command string, params []string) (requests [][]byte, err er
 			requests = append(requests, buffer.Bytes())
 		}
 	}
-
 	return requests, nil
 }
 
