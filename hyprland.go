@@ -69,17 +69,17 @@ func prepareRequests(command string, params []string) (requests [][]byte, err er
 	return requests, nil
 }
 
-func (c *IPCClient) validateResponses(params []string, responses []byte) error {
+func (c *IPCClient) validateResponse(params []string, response []byte) error {
 	if !c.Validate {
 		return nil
 	}
 
 	// Empty response
-	if len(responses) == 0 {
+	if len(response) == 0 {
 		return errors.New("empty response")
 	}
 	// Count the number of "ok" we got in response
-	got := strings.Count(string(responses), "ok")
+	got := strings.Count(string(response), "ok")
 	want := len(params)
 	// Commands without parameters still have a "ok" response
 	if want == 0 {
@@ -93,26 +93,26 @@ func (c *IPCClient) validateResponses(params []string, responses []byte) error {
 				"got ok: %d, want: %d, response: %s",
 				got,
 				want,
-				responses,
+				response,
 			),
 		)
 	}
 	return nil
 }
 
-func (c *IPCClient) doRequest(command string, params ...string) (responses []byte, err error) {
+func (c *IPCClient) doRequest(command string, params ...string) (response []byte, err error) {
 	requests, err := prepareRequests(command, params)
 	if err != nil {
 		return nil, fmt.Errorf("error while creating request: %w", err)
 	}
-	for _, r := range requests {
-		response, err := c.Request(r)
+	for _, req := range requests {
+		resp, err := c.Request(req)
 		if err != nil {
 			return nil, fmt.Errorf("error while doing request: %w", err)
 		}
-		responses = append(responses, response...)
+		response = append(response, resp...)
 	}
-	return responses, nil
+	return response, nil
 }
 
 // Initiate a new client or panic.
@@ -216,30 +216,30 @@ func (c *IPCClient) Request(request []byte) (response []byte, err error) {
 // Accept multiple commands at the same time, in this case it will use batch
 // mode, similar to 'hyprctl dispatch --batch'.
 func (c *IPCClient) Dispatch(params ...string) error {
-	responses, err := c.doRequest("dispatch", params...)
+	response, err := c.doRequest("dispatch", params...)
 	if err != nil {
 		return err
 	}
-	return c.validateResponses(params, responses)
+	return c.validateResponse(params, response)
 }
 
 // Reload command, similar to 'hyprctl reload'.
 func (c *IPCClient) Reload() error {
-	responses, err := c.doRequest("reload")
+	response, err := c.doRequest("reload")
 	if err != nil {
 		return err
 	}
-	return c.validateResponses(nil, responses)
+	return c.validateResponse(nil, response)
 }
 
 // Kill command, similar to 'hyprctl kill'.
 // Will NOT wait for the user to click in the window.
 func (c *IPCClient) Kill() error {
-	responses, err := c.doRequest("kill")
+	response, err := c.doRequest("kill")
 	if err != nil {
 		return err
 	}
-	return c.validateResponses(nil, responses)
+	return c.validateResponse(nil, response)
 }
 
 // Get option command, similar to 'hyprctl getoption'.
