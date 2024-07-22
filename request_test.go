@@ -200,6 +200,14 @@ func TestGetOption(t *testing.T) {
 	}
 }
 
+func TestKeyword(t *testing.T) {
+	checkEnvironment(t)
+	err := c.Keyword("general:border_size 1", "general:border_size 5")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestKill(t *testing.T) {
 	testCommand(t, c.Kill)
 }
@@ -212,14 +220,22 @@ func TestReload(t *testing.T) {
 	testCommand(t, c.Reload)
 }
 
+func TestSetCursor(t *testing.T) {
+	checkEnvironment(t)
+	err := c.SetCursor("Nordzy-cursors", 32)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestSplash(t *testing.T) {
+	testCommand1(t, c.Splash, "")
+}
+
 func TestWorkspaces(t *testing.T) {
 	testCommand1(t, c.Workspaces, []Workspace{})
 }
 
 func TestVersion(t *testing.T) {
 	testCommand1(t, c.Version, Version{})
-}
-
-func TestSplash(t *testing.T) {
-	testCommand1(t, c.Splash, "")
 }

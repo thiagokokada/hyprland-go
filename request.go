@@ -207,7 +207,7 @@ func (c *RequestClient) Request(request RawRequest) (response RawResponse, err e
 	return rbuf.Bytes(), nil
 }
 
-// Get option command, similar to 'hyprctl activewindow'.
+// Active window command, similar to 'hyprctl activewindow'.
 // Returns a [Window] object.
 func (c *RequestClient) ActiveWindow() (w Window, err error) {
 	response, err := c.doRequest("activewindow")
@@ -227,7 +227,7 @@ func (c *RequestClient) ActiveWorkspace() (w Workspace, err error) {
 	return w, unmarshalResponse(response, &w)
 }
 
-// Get option command, similar to 'hyprctl clients'.
+// Clients command, similar to 'hyprctl clients'.
 // Returns a [Client] object.
 func (c *RequestClient) Clients() (cl []Client, err error) {
 	response, err := c.doRequest("clients")
@@ -237,7 +237,7 @@ func (c *RequestClient) Clients() (cl []Client, err error) {
 	return cl, unmarshalResponse(response, &cl)
 }
 
-// Get option command, similar to 'hyprctl cursorpos'.
+// Cursor position command, similar to 'hyprctl cursorpos'.
 // Returns a [CursorPos] object.
 func (c *RequestClient) CursorPos() (cu CursorPos, err error) {
 	response, err := c.doRequest("cursorpos")
@@ -268,6 +268,15 @@ func (c *RequestClient) GetOption(name string) (o Option, err error) {
 	return o, unmarshalResponse(response, &o)
 }
 
+// Keyword command, similar to 'hyprctl keyword'.
+func (c *RequestClient) Keyword(params ...string) error {
+	response, err := c.doRequest("keyword", params...)
+	if err != nil {
+		return err
+	}
+	return c.validateResponse(nil, response)
+}
+
 // Kill command, similar to 'hyprctl kill'.
 // Will NOT wait for the user to click in the window.
 func (c *RequestClient) Kill() error {
@@ -278,7 +287,7 @@ func (c *RequestClient) Kill() error {
 	return c.validateResponse(nil, response)
 }
 
-// Kill command, similar to 'hyprctl monitors'.
+// Monitors command, similar to 'hyprctl monitors'.
 // Returns a [Monitor] object.
 func (c *RequestClient) Monitors() (m []Monitor, err error) {
 	response, err := c.doRequest("monitors")
@@ -297,7 +306,25 @@ func (c *RequestClient) Reload() error {
 	return c.validateResponse(nil, response)
 }
 
-// Get option command, similar to 'hyprctl version'.
+// Set cursor command, similar to 'hyprctl setcursor'.
+func (c *RequestClient) SetCursor(theme string, size int) error {
+	response, err := c.doRequest("setcursor", fmt.Sprintf("%s %d", theme, size))
+	if err != nil {
+		return err
+	}
+	return c.validateResponse(nil, response)
+}
+
+// Splash command, similar to 'hyprctl splash'.
+func (c *RequestClient) Splash() (s string, err error) {
+	response, err := c.doRequest("splash")
+	if err != nil {
+		return "", err
+	}
+	return string(response), nil
+}
+
+// Version command, similar to 'hyprctl version'.
 // Returns a [Version] object.
 func (c *RequestClient) Version() (v Version, err error) {
 	response, err := c.doRequest("version")
@@ -307,7 +334,7 @@ func (c *RequestClient) Version() (v Version, err error) {
 	return v, unmarshalResponse(response, &v)
 }
 
-// Get option command, similar to 'hyprctl workspaces'.
+// Workspaces option command, similar to 'hyprctl workspaces'.
 // Returns a [Workspace] object.
 func (c *RequestClient) Workspaces() (w []Workspace, err error) {
 	response, err := c.doRequest("workspaces")
@@ -315,13 +342,4 @@ func (c *RequestClient) Workspaces() (w []Workspace, err error) {
 		return w, err
 	}
 	return w, unmarshalResponse(response, &w)
-}
-
-// Get option command, similar to 'hyprctl splash'.
-func (c *RequestClient) Splash() (s string, err error) {
-	response, err := c.doRequest("splash")
-	if err != nil {
-		return "", err
-	}
-	return string(response), nil
 }
