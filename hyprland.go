@@ -46,7 +46,7 @@ func prepareRequests(command string, params []string) (requests [][]byte) {
 	case 0:
 		requests = append(requests, []byte(command))
 	case 1:
-		requests = append(requests, []byte(fmt.Sprintf("%s %s", command, params[0])))
+		requests = append(requests, []byte(command+" "+params[0]))
 	default:
 		// Hyprland IPC has a hidden limit for commands, so we are
 		// splitting the commands in multiple requests if the user pass
@@ -82,8 +82,10 @@ func (c *IPCClient) validateResponse(params []string, response []byte) error {
 	if len(response) == 0 {
 		return errors.New("empty response")
 	}
+
+	var resp = string(response)
 	// Count the number of "ok" we got in response
-	got := strings.Count(string(response), "ok")
+	got := strings.Count(resp, "ok")
 	want := len(params)
 	// Commands without parameters still have a "ok" response
 	if want == 0 {
@@ -92,14 +94,13 @@ func (c *IPCClient) validateResponse(params []string, response []byte) error {
 	// If we had less than expected number of "ok" results, it means
 	// something went wrong
 	if got < want {
-		return errors.New(
-			fmt.Sprintf(
-				"got ok: %d, want: %d, response: %s",
-				got,
-				want,
-				response,
-			),
+		return fmt.Errorf(
+			"got ok: %d, want: %d, response: %s",
+			got,
+			want,
+			resp,
 		)
+
 	}
 	return nil
 }
