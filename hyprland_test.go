@@ -4,14 +4,19 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
-var client *IPCClient
+var c *IPCClient
+
+type DummyClient struct {
+	IPCClient
+}
 
 func init() {
 	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") != "" {
-		client = MustClient()
+		c = MustClient()
 	}
 }
 
@@ -67,35 +72,45 @@ func TestMakeRequest(t *testing.T) {
 	}
 }
 
-
 func TestValidateResponse(t *testing.T) {
-	if client == nil {
-		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
-	}
-	// Create its own client to avoid messing the global one
-	client := MustClient()
+	// Dummy client to allow this test to run without Hyprland
+	c := DummyClient{}
 
-	// With client.Validate = true, should fail this response
-	client.Validate = true
-	err := client.Dispatch("oops")
-	if err == nil {
-		t.Error("nil error")
+	tests := []struct {
+		params    []string
+		response  RawResponse
+		validate  bool
+		expectErr bool
+	}{
+		{genParams("param", 1), RawResponse("   ok   "), true, false},
+		{genParams("param", 2), RawResponse("ok"), true, true},
+		{genParams("param", 2), RawResponse("ok"), false, false},
+		{genParams("param", 1), RawResponse("ok ok"), true, false}, // not sure about this case, will leave like this for now
+		{genParams("param", 5), RawResponse(strings.Repeat("ok", 5)), true, false},
+		{genParams("param", 6), RawResponse(strings.Repeat("ok", 5)), true, true},
+		{genParams("param", 6), RawResponse(strings.Repeat("ok", 5)), false, false},
+		{genParams("param", 10), RawResponse(strings.Repeat(" ok ", 10)), true, false},
 	}
-
-	// With client.Validate = false, should not fail this response
-	client.Validate = false
-	err = client.Dispatch("oops")
-	if err != nil {
-		t.Error(err)
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("tests_%v-%v", tt.params, tt.response), func(t *testing.T) {
+			c.Validate = tt.validate
+			err := c.validateResponse(tt.params, tt.response)
+			if tt.expectErr && err == nil {
+				t.Errorf("got: %v, want error", err)
+			}
+			if !tt.expectErr && err != nil {
+				t.Errorf("got %v, want nil", err)
+			}
+		})
 	}
 }
 
 func TestRequest(t *testing.T) {
-	if client == nil {
+	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	response, err := client.Request([]byte("dispatch exec"))
+	response, err := c.Request([]byte("dispatch exec"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -105,11 +120,11 @@ func TestRequest(t *testing.T) {
 }
 
 func TestActiveWindow(t *testing.T) {
-	if client == nil {
+	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	got, err := client.ActiveWindow()
+	got, err := c.ActiveWindow()
 	if err != nil {
 		t.Error(err)
 	}
@@ -119,11 +134,11 @@ func TestActiveWindow(t *testing.T) {
 }
 
 func TestActiveWorkspace(t *testing.T) {
-	if client == nil {
+	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	got, err := client.ActiveWorkspace()
+	got, err := c.ActiveWorkspace()
 	if err != nil {
 		t.Error(err)
 	}
@@ -133,11 +148,11 @@ func TestActiveWorkspace(t *testing.T) {
 }
 
 func TestClients(t *testing.T) {
-	if client == nil {
+	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	got, err := client.Clients()
+	got, err := c.Clients()
 	if err != nil {
 		t.Error(err)
 	}
@@ -147,11 +162,11 @@ func TestClients(t *testing.T) {
 }
 
 func TestCursorPos(t *testing.T) {
-	if client == nil {
+	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	got, err := client.CursorPos()
+	got, err := c.CursorPos()
 	if err != nil {
 		t.Error(err)
 	}
@@ -161,11 +176,11 @@ func TestCursorPos(t *testing.T) {
 }
 
 func TestDispatch(t *testing.T) {
-	if client == nil {
+	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	err := client.Dispatch("exec kitty")
+	err := c.Dispatch("exec kitty")
 	if err != nil {
 		t.Error(err)
 	}
@@ -174,14 +189,14 @@ func TestDispatch(t *testing.T) {
 		t.Skip("skipping slow test")
 	}
 
-	err = client.Dispatch(genParams("exec kitty", 40)...)
+	err = c.Dispatch(genParams("exec kitty", 40)...)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestGetOption(t *testing.T) {
-	if client == nil {
+	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
@@ -192,7 +207,7 @@ func TestGetOption(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("mass_tests_%v", tt.option), func(t *testing.T) {
-			got, err := client.GetOption(tt.option)
+			got, err := c.GetOption(tt.option)
 			if err != nil {
 				t.Error(err)
 			}
@@ -204,34 +219,33 @@ func TestGetOption(t *testing.T) {
 }
 
 func TestKill(t *testing.T) {
-	if client == nil {
+	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	err := client.Kill()
+	err := c.Kill()
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestReload(t *testing.T) {
-	if client == nil {
+	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	err := client.Reload()
+	err := c.Reload()
 	if err != nil {
 		t.Error(err)
 	}
 }
 
-
 func TestVersion(t *testing.T) {
-	if client == nil {
+	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	got, err := client.Version()
+	got, err := c.Version()
 	if err != nil {
 		t.Error(err)
 	}
@@ -241,11 +255,11 @@ func TestVersion(t *testing.T) {
 }
 
 func TestSplash(t *testing.T) {
-	if client == nil {
+	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	got, err := client.Splash()
+	got, err := c.Splash()
 	if err != nil {
 		t.Error(err)
 	}
