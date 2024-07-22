@@ -256,7 +256,7 @@ func (c *IPCClient) Kill() error {
 }
 
 // Get option command, similar to 'hyprctl activeworkspace'.
-// Returns an [Workspace] object.
+// Returns a [Workspace] object.
 func (c *IPCClient) ActiveWorkspace() (w Workspace, err error) {
 	response, err := c.doRequest("activeworkspace")
 	if err != nil {
@@ -265,6 +265,8 @@ func (c *IPCClient) ActiveWorkspace() (w Workspace, err error) {
 	return w, unmarshalResponse(response, &w)
 }
 
+// Get option command, similar to 'hyprctl activewindow'.
+// Returns a [Window] object.
 func (c *IPCClient) ActiveWindow() (w Window, err error) {
 	response, err := c.doRequest("activewindow")
 	if err != nil {
@@ -273,6 +275,8 @@ func (c *IPCClient) ActiveWindow() (w Window, err error) {
 	return w, unmarshalResponse(response, &w)
 }
 
+// Get option command, similar to 'hyprctl clients'.
+// Returns a [Client] object.
 func (c *IPCClient) Clients() (cl []Client, err error) {
 	response, err := c.doRequest("clients")
 	if err != nil {
