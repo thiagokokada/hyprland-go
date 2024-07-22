@@ -8,10 +8,10 @@ import (
 	"testing"
 )
 
-var c *IPCClient
+var c *RequestClient
 
 type DummyClient struct {
-	IPCClient
+	RequestClient
 }
 
 func init() {
@@ -55,7 +55,7 @@ func testCommand1[T any](t *testing.T, command func() (T, error), v any) {
 	}
 }
 
-func TestMakeRequest(t *testing.T) {
+func TestPrepareRequests(t *testing.T) {
 	// test params
 	tests := []struct {
 		command  string

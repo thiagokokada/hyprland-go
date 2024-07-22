@@ -64,7 +64,7 @@ func prepareRequests(command string, params []string) (requests []RawRequest) {
 	return requests
 }
 
-func (c *IPCClient) validateResponse(params []string, response RawResponse) error {
+func (c *RequestClient) validateResponse(params []string, response RawResponse) error {
 	if !c.Validate {
 		return nil
 	}
@@ -108,7 +108,7 @@ func unmarshalResponse(response RawResponse, v any) (err error) {
 	return nil
 }
 
-func (c *IPCClient) doRequest(command string, params ...string) (response RawResponse, err error) {
+func (c *RequestClient) doRequest(command string, params ...string) (response RawResponse, err error) {
 	requests := prepareRequests(command, params)
 
 	var buf bytes.Buffer
@@ -123,13 +123,7 @@ func (c *IPCClient) doRequest(command string, params ...string) (response RawRes
 	return buf.Bytes(), nil
 }
 
-// Initiate a new client or panic.
-// This should be the preferred method for user scripts, since it will
-// automatically find the proper socket to connect and use the
-// HYPRLAND_INSTANCE_SIGNATURE for the current user.
-// If you need to connect to arbitrary user instances or need a method that
-// will not panic on error, use [NewClient] instead.
-func MustClient() *IPCClient {
+func mustSocket(socket string) string {
 	his := os.Getenv("HYPRLAND_INSTANCE_SIGNATURE")
 	if his == "" {
 		panic("HYPRLAND_INSTANCE_SIGNATURE is empty, are you using Hyprland?")
@@ -141,38 +135,30 @@ func MustClient() *IPCClient {
 		user := must1(user.Current()).Uid
 		runtimeDir = filepath.Join("/run/user", user)
 	}
+	return filepath.Join(runtimeDir, "hypr", his, socket)
+}
 
-	return must1(
-		NewClient(
-			filepath.Join(runtimeDir, "hypr", his, ".socket.sock"),
-			filepath.Join(runtimeDir, "hypr", his, ".socket2.sock"),
-		),
-	)
+// Initiate a new client or panic.
+// This should be the preferred method for user scripts, since it will
+// automatically find the proper socket to connect and use the
+// HYPRLAND_INSTANCE_SIGNATURE for the current user.
+// If you need to connect to arbitrary user instances or need a method that
+// will not panic on error, use [NewClient] instead.
+func MustClient() *RequestClient {
+	return NewClient(mustSocket(".socket.sock"))
 }
 
 // Initiate a new client.
 // Receive as parameters a requestSocket that is generally localised in
-// '$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket.sock' and
-// eventSocket that is generally localised in
-// '$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock'.
-func NewClient(requestSocket, eventSocket string) (*IPCClient, error) {
-	if requestSocket == "" || eventSocket == "" {
-		return nil, errors.New("empty request or event socket")
-	}
-
-	conn, err := net.Dial("unix", eventSocket)
-	if err != nil {
-		return nil, fmt.Errorf("error while connecting to socket: %w", err)
-	}
-
-	return &IPCClient{
+// '$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket.sock'.
+func NewClient(socket string) *RequestClient {
+	return &RequestClient{
 		Validate: true,
-		requestConn: &net.UnixAddr{
+		conn: &net.UnixAddr{
 			Net:  "unix",
-			Name: requestSocket,
+			Name: socket,
 		},
-		eventConn: conn,
-	}, nil
+	}
 }
 
 // Low-level request method, should be avoided unless there is no alternative.
@@ -181,13 +167,13 @@ func NewClient(requestSocket, eventSocket string) (*IPCClient, error) {
 // '[]byte("dispatch exec kitty")'.
 // Keep in mind that there is no validation. In case of an invalid request, the
 // response will generally be something different from "ok".
-func (c *IPCClient) Request(request RawRequest) (response RawResponse, err error) {
+func (c *RequestClient) Request(request RawRequest) (response RawResponse, err error) {
 	if len(request) == 0 {
 		return nil, errors.New("empty request")
 	}
 
 	// Connect to the request socket
-	conn, err := net.DialUnix("unix", nil, c.requestConn)
+	conn, err := net.DialUnix("unix", nil, c.conn)
 	defer conn.Close()
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to socket: %w", err)
@@ -223,7 +209,7 @@ func (c *IPCClient) Request(request RawRequest) (response RawResponse, err error
 
 // Get option command, similar to 'hyprctl activewindow'.
 // Returns a [Window] object.
-func (c *IPCClient) ActiveWindow() (w Window, err error) {
+func (c *RequestClient) ActiveWindow() (w Window, err error) {
 	response, err := c.doRequest("activewindow")
 	if err != nil {
 		return w, err
@@ -233,7 +219,7 @@ func (c *IPCClient) ActiveWindow() (w Window, err error) {
 
 // Get option command, similar to 'hyprctl activeworkspace'.
 // Returns a [Workspace] object.
-func (c *IPCClient) ActiveWorkspace() (w Workspace, err error) {
+func (c *RequestClient) ActiveWorkspace() (w Workspace, err error) {
 	response, err := c.doRequest("activeworkspace")
 	if err != nil {
 		return w, err
@@ -243,7 +229,7 @@ func (c *IPCClient) ActiveWorkspace() (w Workspace, err error) {
 
 // Get option command, similar to 'hyprctl clients'.
 // Returns a [Client] object.
-func (c *IPCClient) Clients() (cl []Client, err error) {
+func (c *RequestClient) Clients() (cl []Client, err error) {
 	response, err := c.doRequest("clients")
 	if err != nil {
 		return cl, err
@@ -253,7 +239,7 @@ func (c *IPCClient) Clients() (cl []Client, err error) {
 
 // Get option command, similar to 'hyprctl cursorpos'.
 // Returns a [CursorPos] object.
-func (c *IPCClient) CursorPos() (cu CursorPos, err error) {
+func (c *RequestClient) CursorPos() (cu CursorPos, err error) {
 	response, err := c.doRequest("cursorpos")
 	if err != nil {
 		return cu, err
@@ -264,7 +250,7 @@ func (c *IPCClient) CursorPos() (cu CursorPos, err error) {
 // Dispatch commands, similar to 'hyprctl dispatch'.
 // Accept multiple commands at the same time, in this case it will use batch
 // mode, similar to 'hyprctl dispatch --batch'.
-func (c *IPCClient) Dispatch(params ...string) error {
+func (c *RequestClient) Dispatch(params ...string) error {
 	response, err := c.doRequest("dispatch", params...)
 	if err != nil {
 		return err
@@ -274,7 +260,7 @@ func (c *IPCClient) Dispatch(params ...string) error {
 
 // Get option command, similar to 'hyprctl getoption'.
 // Returns an [Option] object.
-func (c *IPCClient) GetOption(name string) (o Option, err error) {
+func (c *RequestClient) GetOption(name string) (o Option, err error) {
 	response, err := c.doRequest("getoption", name)
 	if err != nil {
 		return o, err
@@ -284,7 +270,7 @@ func (c *IPCClient) GetOption(name string) (o Option, err error) {
 
 // Kill command, similar to 'hyprctl kill'.
 // Will NOT wait for the user to click in the window.
-func (c *IPCClient) Kill() error {
+func (c *RequestClient) Kill() error {
 	response, err := c.doRequest("kill")
 	if err != nil {
 		return err
@@ -293,7 +279,7 @@ func (c *IPCClient) Kill() error {
 }
 
 // Reload command, similar to 'hyprctl reload'.
-func (c *IPCClient) Reload() error {
+func (c *RequestClient) Reload() error {
 	response, err := c.doRequest("reload")
 	if err != nil {
 		return err
@@ -303,7 +289,7 @@ func (c *IPCClient) Reload() error {
 
 // Get option command, similar to 'hyprctl version'.
 // Returns an [Version] object.
-func (c *IPCClient) Version() (v Version, err error) {
+func (c *RequestClient) Version() (v Version, err error) {
 	response, err := c.doRequest("version")
 	if err != nil {
 		return v, err
@@ -312,7 +298,7 @@ func (c *IPCClient) Version() (v Version, err error) {
 }
 
 // Get option command, similar to 'hyprctl splash'.
-func (c *IPCClient) Splash() (s string, err error) {
+func (c *RequestClient) Splash() (s string, err error) {
 	response, err := c.doRequest("splash")
 	if err != nil {
 		return "", err
