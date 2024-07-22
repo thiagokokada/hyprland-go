@@ -3,6 +3,7 @@ package hyprland
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -128,21 +129,52 @@ func TestReload(t *testing.T) {
 	}
 }
 
+func TestActiveWorkspace(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	got, err := client.ActiveWorkspace()
+	if err != nil {
+		t.Error(err)
+	}
+	if reflect.DeepEqual(got, Workspace{}) {
+		t.Error("got empty struct")
+	}
+}
+
+func TestActiveWindow(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	got, err := client.ActiveWindow()
+	if err != nil {
+		t.Error(err)
+	}
+	if reflect.DeepEqual(got, Window{}) {
+		t.Error("got empty struct")
+	}
+}
+
 func TestGetOption(t *testing.T) {
 	if client == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 
-	tests := []struct { option  string }{
+	tests := []struct{ option string }{
 		{"general:border_size"},
 		{"gestures:workspace_swipe"},
 		{"misc:vrr"},
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("mass_tests_%v", tt.option), func(t *testing.T) {
-			_, err := client.GetOption(tt.option)
+			got, err := client.GetOption(tt.option)
 			if err != nil {
 				t.Error(err)
+			}
+			if reflect.DeepEqual(got, Option{}) {
+				t.Error("got empty struct")
 			}
 		})
 	}

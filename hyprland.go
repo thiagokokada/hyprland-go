@@ -101,6 +101,18 @@ func (c *IPCClient) validateResponse(params []string, response []byte) error {
 	return nil
 }
 
+func unmarshalResponse(response []byte, v any) (err error) {
+	if len(response) == 0 {
+		return errors.New("empty response")
+	}
+
+	err = json.Unmarshal(response, &v)
+	if err != nil {
+		return fmt.Errorf("error during unmarshal: %w", err)
+	}
+	return nil
+}
+
 func (c *IPCClient) doRequest(command string, params ...string) (response []byte, err error) {
 	requests, err := prepareRequests(command, params)
 	if err != nil {
@@ -121,7 +133,7 @@ func (c *IPCClient) doRequest(command string, params ...string) (response []byte
 // automatically find the proper socket to connect and use the
 // HYPRLAND_INSTANCE_SIGNATURE for the current user.
 // If you need to connect to arbitrary user instances or need a method that
-// will not panic on error, use [hyprland.NewClient] instead.
+// will not panic on error, use [NewClient] instead.
 func MustClient() *IPCClient {
 	his := os.Getenv("HYPRLAND_INSTANCE_SIGNATURE")
 	if his == "" {
@@ -243,17 +255,30 @@ func (c *IPCClient) Kill() error {
 	return c.validateResponse(nil, response)
 }
 
+// Get option command, similar to 'hyprctl activeworkspace'.
+// Returns an [Workspace] object.
+func (c *IPCClient) ActiveWorkspace() (w Workspace, err error) {
+	response, err := c.doRequest("activeworkspace")
+	if err != nil {
+		return w, err
+	}
+	return w, unmarshalResponse(response, &w)
+}
+
+func (c *IPCClient) ActiveWindow() (w Window, err error) {
+	response, err := c.doRequest("activewindow")
+	if err != nil {
+		return w, err
+	}
+	return w, unmarshalResponse(response, &w)
+}
+
 // Get option command, similar to 'hyprctl getoption'.
-// Returns an [hyprland.Option] object.
-func (c *IPCClient) GetOption(name string) (Option, error) {
-	var result Option
+// Returns an [Option] object.
+func (c *IPCClient) GetOption(name string) (o Option, err error) {
 	response, err := c.doRequest("getoption", name)
 	if err != nil {
-		return result, err
+		return o, err
 	}
-	err = json.Unmarshal(response, &result)
-	if err != nil {
-		return result, fmt.Errorf("error during unmarshal: %w", err)
-	}
-	return result, nil
+	return o, unmarshalResponse(response, &o)
 }
