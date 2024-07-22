@@ -307,8 +307,17 @@ func (c *IPCClient) Reload() error {
 	return c.validateResponse(nil, response)
 }
 
+// Get option command, similar to 'hyprctl version'.
+// Returns an [Version] object.
+func (c *IPCClient) Version() (v Version, err error) {
+	response, err := c.doRequest("version")
+	if err != nil {
+		return v, err
+	}
+	return v, unmarshalResponse(response, &v)
+}
+
 // Get option command, similar to 'hyprctl splash'.
-// Returns an [Option] object.
 func (c *IPCClient) Splash() (s string, err error) {
 	response, err := c.doRequest("splash")
 	if err != nil {

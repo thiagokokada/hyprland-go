@@ -2,12 +2,6 @@ package hyprland
 
 // Try to keep this in the same order as the output for `hyprctl` for sanity.
 
-type Option struct {
-	Option string `json:"option"`
-	Int    int    `json:"int"`
-	Set    bool   `json:"set"`
-}
-
 type Client struct {
 	Address        string        `json:"address"`
 	Mapped         bool          `json:"mapped"`
@@ -38,6 +32,27 @@ type CursorPos struct {
 	Y int `json:"y"`
 }
 
+type Option struct {
+	Option string `json:"option"`
+	Int    int    `json:"int"`
+	Set    bool   `json:"set"`
+}
+
+type Version struct {
+	Branch        string   `json:"branch"`
+	Commit        string   `json:"commit"`
+	Dirty         bool     `json:"dirty"`
+	CommitMessage string   `json:"commit_message"`
+	CommitDate    string   `json:"commit_date"`
+	Tag           string   `json:"tag"`
+	Commits       string   `json:"commits"`
+	Flags         []string `json:"flags"`
+}
+
+type Window struct {
+	Client
+}
+
 type Workspace struct {
 	WorkspaceType
 	Monitor         string `json:"monitor"`
@@ -46,10 +61,6 @@ type Workspace struct {
 	HasFullScreen   bool   `json:"hasfullscreen"`
 	LastWindow      string `json:"lastwindow"`
 	LastWindowTitle string `json:"lastwindowtitle"`
-}
-
-type Window struct {
-	Client
 }
 
 type WorkspaceType struct {

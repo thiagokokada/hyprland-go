@@ -205,6 +205,20 @@ func TestKill(t *testing.T) {
 	}
 }
 
+func TestVersion(t *testing.T) {
+	if client == nil {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	got, err := client.Version()
+	if err != nil {
+		t.Error(err)
+	}
+	if reflect.DeepEqual(got, Version{}) {
+		t.Error("got empty struct")
+	}
+}
+
 func TestSplash(t *testing.T) {
 	if client == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
