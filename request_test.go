@@ -148,8 +148,25 @@ func TestClients(t *testing.T) {
 	testCommand(t, c.Clients, []Client{})
 }
 
+func TestConfigErrors(t *testing.T) {
+	testCommand(t, c.ConfigErrors, []ConfigError{})
+}
+
 func TestCursorPos(t *testing.T) {
 	testCommand(t, c.CursorPos, CursorPos{})
+}
+
+func TestDecorations(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test that depends in kitty running")
+	}
+	testCommand(t, func() ([]Decoration, error) {
+		return c.Decorations("kitty")
+	}, []Decoration{})
+}
+
+func TestDevices(t *testing.T) {
+	testCommand(t, c.Devices, Devices{})
 }
 
 func TestDispatch(t *testing.T) {

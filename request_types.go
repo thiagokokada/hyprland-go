@@ -74,9 +74,41 @@ type Client struct {
 	FocusHistoryId int           `json:"focusHistoryID"`
 }
 
+type ConfigError string
+
 type CursorPos struct {
 	X int `json:"x"`
 	Y int `json:"y"`
+}
+
+type Decoration struct {
+	DecorationName string `json:"decorationName"`
+	Priority       int    `json:"priority"`
+}
+
+type Devices struct {
+	Mice []struct {
+		Address      string  `json:"address"`
+		Name         string  `json:"name"`
+		DefaultSpeed float64 `json:"defaultSpeed"`
+	} `json:"mice"`
+	Keyboards []struct {
+		Address      string `json:"address"`
+		Name         string `json:"name"`
+		Rules        string `json:"rules"`
+		Model        string `json:"model"`
+		Layout       string `json:"layout"`
+		Variant      string `json:"variant"`
+		Options      string `json:"options"`
+		ActiveKeymap string `json:"active_keymap"`
+		Main         bool   `json:"main"`
+	} `json:"keyboards"`
+	Tablets  []interface{} `json:"tablets"` // TODO: need a tablet to test
+	Touch    []interface{} `json:"touch"`   // TODO: need a touchscreen to test
+	Switches []struct {
+		Address string `json:"address"`
+		Name    string `json:"name"`
+	} `json:"switches"`
 }
 
 type Output string

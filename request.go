@@ -249,6 +249,16 @@ func (c *RequestClient) Clients() (cl []Client, err error) {
 	return cl, unmarshalResponse(response, &cl)
 }
 
+// ConfigErrors command, similar to `hyprctl configerrors`.
+// Returns a [ConfigError] object.
+func (c *RequestClient) ConfigErrors() (ce []ConfigError, err error) {
+	response, err := c.doRequest("configerrors")
+	if err != nil {
+		return ce, err
+	}
+	return ce, unmarshalResponse(response, &ce)
+}
+
 // Cursor position command, similar to 'hyprctl cursorpos'.
 // Returns a [CursorPos] object.
 func (c *RequestClient) CursorPos() (cu CursorPos, err error) {
@@ -257,6 +267,26 @@ func (c *RequestClient) CursorPos() (cu CursorPos, err error) {
 		return cu, err
 	}
 	return cu, unmarshalResponse(response, &cu)
+}
+
+// Decorations command, similar to `hyprctl decorations`.
+// Returns a [Decoration] object.
+func (c *RequestClient) Decorations(regex string) (d []Decoration, err error) {
+	response, err := c.doRequest("decorations", regex)
+	if err != nil {
+		return d, err
+	}
+	return d, unmarshalResponse(response, &d)
+}
+
+// Decorations command, similar to `hyprctl devices`.
+// Returns a [Devices] object.
+func (c *RequestClient) Devices() (d Devices, err error) {
+	response, err := c.doRequest("devices")
+	if err != nil {
+		return d, err
+	}
+	return d, unmarshalResponse(response, &d)
 }
 
 // Dispatch commands, similar to 'hyprctl dispatch'.
