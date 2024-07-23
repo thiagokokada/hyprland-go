@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 var c *RequestClient
@@ -171,8 +172,38 @@ func TestDispatch(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip slow test")
 	}
-	testCommandRR(t, func() (RawResponse, error) {
-		return c.Dispatch(genParams("exec kitty sh -c 'exit 0'", 40)...)
+
+	// Testing if we can open at least the amount of instances we asked
+	// Dispatch() to open.
+	// The reason this test exist is because Hyprland has a hidden
+	// limitation in the total amount of batch commands you can trigger,
+	// but this is not documented and it also fails silently.
+	// So this test allows us to validate that the current split of
+	// batch commands is working as expected.
+	// See also: prepareRequests function and MAX_COMMANDS const
+	const want = 35
+	const retries = 10
+	t.Run(fmt.Sprintf("test_opening_%d_kitty_instances", want), func(t *testing.T) {
+		must1(c.Dispatch(genParams("exec kitty sh -c 'sleep 10 && exit 0'", want)...))
+		awid := must1(c.ActiveWorkspace()).Id
+		got := 0
+		for i := 0; i < retries; i++ {
+			got = 0
+			time.Sleep(1 * time.Second)
+			cls := must1(c.Clients())
+
+			for _, cl := range cls {
+				if cl.Workspace.Id == awid && cl.Class == "kitty" {
+					got += 1
+				}
+			}
+			if got >= want {
+				t.Logf("after retries: %d, got kitty: %d, finishing test", i+1, got)
+				return
+			}
+		}
+		// after maximum amount of retries, give up
+		t.Errorf("after retries: %d, got kitty: %d, want at least: %d", retries, got, want)
 	})
 }
 
