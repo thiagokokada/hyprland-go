@@ -292,7 +292,8 @@ func (c *RequestClient) Keyword(params ...string) (r RawResponse, err error) {
 }
 
 // Kill command, similar to 'hyprctl kill'.
-// Will NOT wait for the user to click in the window.
+// Kill an app by clicking on it, can exit with ESCAPE. Will NOT wait until the
+// user to click in the window.
 // Returns the raw response, that may be useful for further validations,
 // especially when [RequestClient] 'Validation' is set to false.
 func (c *RequestClient) Kill() (r RawResponse, err error) {
@@ -301,6 +302,16 @@ func (c *RequestClient) Kill() (r RawResponse, err error) {
 		return response, err
 	}
 	return response, c.validateResponse(nil, response)
+}
+
+// Layer command, similar to 'hyprctl layers'.
+// Returns a [Layer] object.
+func (c *RequestClient) Layers() (l Layers, err error) {
+	response, err := c.doRequest("layers")
+	if err != nil {
+		return l, err
+	}
+	return l, unmarshalResponse(response, &l)
 }
 
 // Monitors command, similar to 'hyprctl monitors'.

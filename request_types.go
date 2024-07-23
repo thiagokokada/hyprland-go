@@ -70,6 +70,23 @@ type CursorPos struct {
 	Y int `json:"y"`
 }
 
+type Output string
+
+type Layers map[Output]Layer
+
+type Layer struct {
+	Levels map[int][]LayerField `json:"levels"`
+}
+
+type LayerField struct {
+	Address   string `json:"address"`
+	X         int    `json:"x"`
+	Y         int    `json:"y"`
+	W         int    `json:"w"`
+	H         int    `json:"h"`
+	Namespace string `json:"namespace"`
+}
+
 type Monitor struct {
 	Id               int           `json:"id"`
 	Name             string        `json:"name"`

@@ -227,6 +227,10 @@ func TestKill(t *testing.T) {
 	testCommandRR(t, c.Kill)
 }
 
+func TestLayers(t *testing.T) {
+	testCommand(t, c.Layers, Layers{})
+}
+
 func TestMonitors(t *testing.T) {
 	testCommand(t, c.Monitors, []Monitor{})
 }
