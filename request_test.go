@@ -165,14 +165,14 @@ func TestCursorPos(t *testing.T) {
 
 func TestDispatch(t *testing.T) {
 	testCommandRR(t, func() (RawResponse, error) {
-		return c.Dispatch("exec kitty")
+		return c.Dispatch("exec kitty sh -c 'echo Testing hyprland-go && sleep 1 && exit 0'")
 	})
 
 	if testing.Short() {
 		t.Skip("skip slow test")
 	}
 	testCommandRR(t, func() (RawResponse, error) {
-		return c.Dispatch(genParams("exec kitty", 40)...)
+		return c.Dispatch(genParams("exec kitty sh -c 'exit 0'", 40)...)
 	})
 }
 
@@ -200,7 +200,7 @@ func TestKeyword(t *testing.T) {
 
 func TestKill(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skip test that kill windows")
+		t.Skip("skip test that kill window")
 	}
 	testCommandRR(t, c.Kill)
 }
