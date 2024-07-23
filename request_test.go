@@ -17,12 +17,6 @@ type DummyClient struct {
 	RequestClient
 }
 
-func init() {
-	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") != "" {
-		c = MustClient()
-	}
-}
-
 func genParams(param string, n int) (params []string) {
 	for i := 0; i < n; i++ {
 		params = append(params, param)
@@ -47,6 +41,28 @@ func testCommand[T any](t *testing.T, command func() (T, error), emptyValue any)
 	assert.Equal(t, reflect.TypeOf(got), reflect.TypeOf(emptyValue))
 	assert.True(t, reflect.DeepEqual(got, emptyValue))
 	t.Logf("got: %+v", got)
+}
+
+func setup() {
+	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") != "" {
+		c = MustClient()
+	}
+}
+
+
+func teardown() {
+	if c != nil {
+		// Make sure that the Hyprland config is in a sane state
+		assert.Must1(c.Reload())
+	}
+}
+
+func TestMain(m *testing.M) {
+	setup()
+	defer teardown()
+
+	exitCode := m.Run()
+	os.Exit(exitCode)
 }
 
 func TestPrepareRequests(t *testing.T) {
