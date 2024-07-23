@@ -73,8 +73,10 @@
                       "-m 4G"
                       "-vga none"
                       "-device virtio-gpu-pci"
-                      #"-device virtio-vga-gl"
-                      #"-display gtk,gl=on"
+                      # needs qemu_full:
+                      # "-device virtio-vga-gl"
+                      # "-display egl-headless,gl=core"
+                      # "-display gtk,gl=on"
                     ];
                   };
 
