@@ -11,23 +11,14 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+
+	"github.com/thiagokokada/hyprland-go/internal/assert"
 )
 
 const (
 	BUF_SIZE     = 8192
 	MAX_COMMANDS = 30
 )
-
-func must1[T any](v T, err error) T {
-	must(err)
-	return v
-}
-
-func must(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
 
 func prepareRequests(command string, params []string) (requests []RawRequest) {
 	if command == "" {
@@ -132,7 +123,7 @@ func mustSocket(socket string) string {
 	// https://github.com/hyprwm/Hyprland/blob/83a5395eaa99fecef777827fff1de486c06b6180/hyprctl/main.cpp#L53-L62
 	runtimeDir := os.Getenv("XDG_RUNTIME_DIR")
 	if runtimeDir == "" {
-		user := must1(user.Current()).Uid
+		user := assert.Must1(user.Current()).Uid
 		runtimeDir = filepath.Join("/run/user", user)
 	}
 	return filepath.Join(runtimeDir, "hypr", his, socket)

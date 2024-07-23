@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/thiagokokada/hyprland-go/internal/assert"
 )
 
 var c *RequestClient
@@ -41,15 +43,9 @@ func testCommandRR(t *testing.T, command func() (RawResponse, error)) {
 func testCommand[T any](t *testing.T, command func() (T, error), emptyValue any) {
 	checkEnvironment(t)
 	got, err := command()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if reflect.TypeOf(got) != reflect.TypeOf(emptyValue) {
-		t.Error("got wrong type")
-	}
-	if reflect.DeepEqual(got, emptyValue) {
-		t.Error("got empty value")
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, reflect.TypeOf(got), reflect.TypeOf(emptyValue))
+	assert.True(t, reflect.DeepEqual(got, emptyValue))
 	t.Logf("got: %+v", got)
 }
 
@@ -68,9 +64,7 @@ func TestPrepareRequests(t *testing.T) {
 		t.Run(fmt.Sprintf("tests_%v-%v", tt.command, tt.params), func(t *testing.T) {
 			requests := prepareRequests(tt.command, tt.params)
 			for i, e := range tt.expected {
-				if string(requests[i]) != e {
-					t.Errorf("got: %s, want: %s", requests[i], e)
-				}
+				assert.Equal(t, string(requests[i]), e)
 			}
 		})
 	}
@@ -91,9 +85,7 @@ func TestPrepareRequests(t *testing.T) {
 	for _, tt := range massTests {
 		t.Run(fmt.Sprintf("mass_tests_%v-%d", tt.command, len(tt.params)), func(t *testing.T) {
 			requests := prepareRequests(tt.command, tt.params)
-			if len(requests) != tt.expected {
-				t.Errorf("got: %d, want: %d", len(requests), tt.expected)
-			}
+			assert.Equal(t, len(requests), tt.expected)
 		})
 	}
 }
@@ -121,11 +113,10 @@ func TestValidateResponse(t *testing.T) {
 		t.Run(fmt.Sprintf("tests_%v-%v", tt.params, tt.response), func(t *testing.T) {
 			c.Validate = tt.validate
 			err := c.validateResponse(tt.params, tt.response)
-			if tt.expectErr && err == nil {
-				t.Errorf("got: %v, want error", err)
-			}
-			if !tt.expectErr && err != nil {
-				t.Errorf("got %v, want nil", err)
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -180,16 +171,21 @@ func TestDispatch(t *testing.T) {
 	const want = 35
 	const retries = 15
 	t.Run(fmt.Sprintf("test_opening_%d_kitty_instances", want), func(t *testing.T) {
-		must1(c.Dispatch(genParams(fmt.Sprintf("exec kitty sh -c 'sleep %d && exit 0'", retries), want)...))
-		awid := must1(c.ActiveWorkspace()).Id
+		_, err := c.Dispatch(genParams(fmt.Sprintf("exec kitty sh -c 'sleep %d && exit 0'", retries), want)...)
+		assert.NoError(t, err)
+
+		aw, err := c.ActiveWorkspace()
+		assert.NoError(t, err)
+
 		got := 0
 		for i := 0; i < retries; i++ {
 			got = 0
 			time.Sleep(1 * time.Second)
-			cls := must1(c.Clients())
+			cls, err := c.Clients()
+			assert.NoError(t, err)
 
 			for _, cl := range cls {
-				if cl.Workspace.Id == awid && cl.Class == "kitty" {
+				if cl.Workspace.Id == aw.Id && cl.Class == "kitty" {
 					got += 1
 				}
 			}

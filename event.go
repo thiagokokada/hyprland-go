@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"strings"
+
+	"github.com/thiagokokada/hyprland-go/internal/assert"
 )
 
 const SEPARATOR = ">>"
@@ -16,7 +18,7 @@ const SEPARATOR = ">>"
 // will not panic on error, use [NewEventClient] instead.
 // Experimental: WIP
 func MustEventClient() *EventClient {
-	return must1(NewEventClient(mustSocket(".socket2.sock")))
+	return assert.Must1(NewEventClient(mustSocket(".socket2.sock")))
 }
 
 // Initiate a new event client.
