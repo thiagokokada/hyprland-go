@@ -104,9 +104,7 @@
                     # bash
                     ''
                       if [ "$(tty)" = "/dev/tty1" ]; then
-                        mkdir -p $HOME/.config/hypr
-                        cp ${hyprlandConf} $HOME/.config/hypr/hyprland.conf
-                        Hyprland
+                        Hyprland --config ${hyprlandConf}
                       fi
                     '';
                 };
