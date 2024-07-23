@@ -35,29 +35,22 @@ func checkEnvironment(t *testing.T) {
 }
 
 func testCommandRR(t *testing.T, command func() (RawResponse, error)) {
-	checkEnvironment(t)
-	response, err := command()
-	if err != nil {
-		t.Error(err)
-	}
-	if len(response) == 0 {
-		t.Error("empty response")
-	}
+	testCommand(t, command, RawResponse(""))
 }
 
-func testCommandS[T any](t *testing.T, command func() (T, error), s any) {
+func testCommand[T any](t *testing.T, command func() (T, error), emptyValue any) {
 	checkEnvironment(t)
 	got, err := command()
 	if err != nil {
 		t.Error(err)
 	}
-	if reflect.TypeOf(got) != reflect.TypeOf(s) {
+	if reflect.TypeOf(got) != reflect.TypeOf(emptyValue) {
 		t.Error("got wrong type")
 	}
-	if reflect.DeepEqual(got, s) {
-		t.Error("got empty struct")
+	if reflect.DeepEqual(got, emptyValue) {
+		t.Error("got empty value")
 	}
-	t.Log(got)
+	t.Logf("got: %+v", got)
 }
 
 func TestPrepareRequests(t *testing.T) {
@@ -145,23 +138,23 @@ func TestRequest(t *testing.T) {
 }
 
 func TestActiveWindow(t *testing.T) {
-	testCommandS(t, c.ActiveWindow, Window{})
+	testCommand(t, c.ActiveWindow, Window{})
 }
 
 func TestActiveWorkspace(t *testing.T) {
-	testCommandS(t, c.ActiveWorkspace, Workspace{})
+	testCommand(t, c.ActiveWorkspace, Workspace{})
 }
 
 func TestBinds(t *testing.T) {
-	testCommandS(t, c.Binds, []Bind{})
+	testCommand(t, c.Binds, []Bind{})
 }
 
 func TestClients(t *testing.T) {
-	testCommandS(t, c.Clients, []Client{})
+	testCommand(t, c.Clients, []Client{})
 }
 
 func TestCursorPos(t *testing.T) {
-	testCommandS(t, c.CursorPos, CursorPos{})
+	testCommand(t, c.CursorPos, CursorPos{})
 }
 
 func TestDispatch(t *testing.T) {
@@ -208,7 +201,6 @@ func TestDispatch(t *testing.T) {
 }
 
 func TestGetOption(t *testing.T) {
-	checkEnvironment(t)
 	tests := []struct{ option string }{
 		{"general:border_size"},
 		{"gestures:workspace_swipe"},
@@ -216,7 +208,7 @@ func TestGetOption(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("mass_tests_%v", tt.option), func(t *testing.T) {
-			testCommandS(t, func() (Option, error) {
+			testCommand(t, func() (Option, error) {
 				return c.GetOption(tt.option)
 			}, Option{})
 		})
@@ -237,7 +229,7 @@ func TestKill(t *testing.T) {
 }
 
 func TestMonitors(t *testing.T) {
-	testCommandS(t, c.Monitors, []Monitor{})
+	testCommand(t, c.Monitors, []Monitor{})
 }
 
 func TestReload(t *testing.T) {
@@ -251,13 +243,13 @@ func TestSetCursor(t *testing.T) {
 }
 
 func TestSplash(t *testing.T) {
-	testCommandS(t, c.Splash, "")
+	testCommand(t, c.Splash, "")
 }
 
 func TestWorkspaces(t *testing.T) {
-	testCommandS(t, c.Workspaces, []Workspace{})
+	testCommand(t, c.Workspaces, []Workspace{})
 }
 
 func TestVersion(t *testing.T) {
-	testCommandS(t, c.Version, Version{})
+	testCommand(t, c.Version, Version{})
 }
