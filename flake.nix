@@ -120,5 +120,23 @@
             };
         }
       );
+
+      packages = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgsFor.${system};
+        in
+        rec {
+          default = hyprland-go;
+          hyprland-go = pkgs.buildGoModule {
+            pname = "hyprland-go";
+            version = "0.0.0";
+
+            src = ./.;
+
+            vendorHash = null;
+          };
+        }
+      );
     };
 }
