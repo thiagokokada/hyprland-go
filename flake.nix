@@ -89,7 +89,7 @@
                           # bash
                           ''
                             cd ${./.}
-                            go test -short -v 2>&1 | tee -a "$HOME/test.log"
+                            go test -v 2>&1 | tee -a "$HOME/test.log"
                             echo $? > "$HOME/test-finished"
                             hyprctl dispatch exit
                           '';
