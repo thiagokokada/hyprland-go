@@ -86,7 +86,7 @@
                           ''
                             glxinfo -B > "$HOME/glxinfo"
                             cd ${./.}
-                            go test -v 2>&1 | tee -a "$HOME/test.log"
+                            go test -v > "$HOME/test.log" 2>&1
                             echo $? > "$HOME/test-finished"
                             hyprctl dispatch exit
                           '';
@@ -115,7 +115,7 @@
 
                   print(machine.succeed("cat ${home}/glxinfo || true"))
                   print(machine.succeed("cat ${home}/test.log"))
-                  print(machine.succeed("test $(cat ${home}/test-finished) -eq 0"))
+                  print(machine.succeed("exit $(cat ${home}/test-finished)"))
                 '';
             };
         }
