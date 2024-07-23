@@ -49,7 +49,6 @@ func setup() {
 	}
 }
 
-
 func teardown() {
 	if c != nil {
 		// Make sure that the Hyprland config is in a sane state
