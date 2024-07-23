@@ -165,7 +165,6 @@ func TestDispatch(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip slow test")
 	}
-
 	// Testing if we can open at least the amount of instances we asked
 	// Dispatch() to open.
 	// The reason this test exist is because Hyprland has a hidden
@@ -175,9 +174,9 @@ func TestDispatch(t *testing.T) {
 	// batch commands is working as expected.
 	// See also: prepareRequests function and MAX_COMMANDS const
 	const want = 35
-	const retries = 10
+	const retries = 15
 	t.Run(fmt.Sprintf("test_opening_%d_kitty_instances", want), func(t *testing.T) {
-		must1(c.Dispatch(genParams("exec kitty sh -c 'sleep 10 && exit 0'", want)...))
+		must1(c.Dispatch(genParams(fmt.Sprintf("exec kitty sh -c 'sleep %d && exit 0'", retries), want)...))
 		awid := must1(c.ActiveWorkspace()).Id
 		got := 0
 		for i := 0; i < retries; i++ {

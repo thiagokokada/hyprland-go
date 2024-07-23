@@ -73,8 +73,10 @@
                       "-m 4G"
                       "-vga none"
                       "-device virtio-gpu-pci"
-                      #"-device virtio-vga-gl"
-                      #"-display gtk,gl=on"
+                      # needs qemu_full:
+                      # "-device virtio-vga-gl"
+                      # "-display egl-headless,gl=core"
+                      # "-display gtk,gl=on"
                     ];
                   };
 
@@ -87,7 +89,7 @@
                           # bash
                           ''
                             cd ${./.}
-                            go test -short -v 2>&1 | tee -a "$HOME/test.log"
+                            go test -v 2>&1 | tee -a "$HOME/test.log"
                             echo $? > "$HOME/test-finished"
                             hyprctl dispatch exit
                           '';
@@ -102,9 +104,7 @@
                     # bash
                     ''
                       if [ "$(tty)" = "/dev/tty1" ]; then
-                        mkdir -p $HOME/.config/hypr
-                        cp ${hyprlandConf} $HOME/.config/hypr/hyprland.conf
-                        Hyprland
+                        Hyprland --config ${hyprlandConf}
                       fi
                     '';
                 };
