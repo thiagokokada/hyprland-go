@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"cmp"
 	"testing"
 )
 
@@ -41,12 +40,5 @@ func True(t *testing.T, got bool) {
 	t.Helper()
 	if got {
 		t.Fatalf("got: %v, want: false", got)
-	}
-}
-
-func GreaterOrEqual[T cmp.Ordered](t *testing.T, got, want T) {
-	t.Helper()
-	if got < want {
-		t.Errorf("got: %v; want: >=%v", got, want)
 	}
 }
