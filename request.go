@@ -232,6 +232,14 @@ func (c *RequestClient) ActiveWorkspace() (w Workspace, err error) {
 	return w, unmarshalResponse(response, &w)
 }
 
+func (c *RequestClient) Animations() (a [][]Animation, err error) {
+	response, err := c.doRequest("animations")
+	if err != nil {
+		return a, err
+	}
+	return a, unmarshalResponse(response, &a)
+}
+
 func (c *RequestClient) Binds() (b []Bind, err error) {
 	response, err := c.doRequest("binds")
 	if err != nil {

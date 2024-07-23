@@ -42,7 +42,7 @@ func testCommand[T any](t *testing.T, command func() (T, error), emptyValue any)
 	checkEnvironment(t)
 	got, err := command()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if reflect.TypeOf(got) != reflect.TypeOf(emptyValue) {
 		t.Error("got wrong type")
@@ -143,6 +143,10 @@ func TestActiveWindow(t *testing.T) {
 
 func TestActiveWorkspace(t *testing.T) {
 	testCommand(t, c.ActiveWorkspace, Workspace{})
+}
+
+func TestAnimations(t *testing.T) {
+	testCommand(t, c.Animations, [][]Animation{})
 }
 
 func TestBinds(t *testing.T) {

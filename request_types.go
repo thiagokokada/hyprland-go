@@ -23,6 +23,15 @@ type RequestClient struct {
 // Try to keep struct fields in the same order as the output for `hyprctl -j`
 // for sanity.
 
+type Animation struct {
+	Name       string  `json:"name"`
+	Overridden bool    `json:"overridden"`
+	Bezier     string  `json:"bezier"`
+	Enabled    bool    `json:"enabled"`
+	Speed      float64 `json:"speed"`
+	Style      string  `json:"style"`
+}
+
 type Bind struct {
 	Locked         bool   `json:"locked"`
 	Mouse          bool   `json:"mouse"`
