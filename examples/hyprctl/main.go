@@ -11,6 +11,8 @@ import (
 	"github.com/thiagokokada/hyprland-go"
 )
 
+var c *hyprland.RequestClient
+
 // https://stackoverflow.com/a/28323276
 type arrayFlags []string
 
@@ -39,8 +41,6 @@ func mustMarshalIndent(v any) []byte {
 }
 
 func main() {
-	c := hyprland.MustClient()
-
 	dispatchFS := flag.NewFlagSet("dispatch", flag.ExitOnError)
 	var dispatch arrayFlags
 	dispatchFS.Var(&dispatch, "c", "Command to dispatch. Please quote commands with arguments (e.g.: 'exec kitty')")
@@ -51,36 +51,60 @@ func main() {
 
 	flag.Parse()
 
+	m := map[string]func(){
+		"activewindow": func() {
+			v := must1(c.ActiveWindow())
+			fmt.Printf("%s\n", mustMarshalIndent(v))
+		},
+		"activeworkspace": func() {
+			v := must1(c.ActiveWorkspace())
+			fmt.Printf("%s\n", mustMarshalIndent(v))
+		},
+		"dispatch": func() {
+			dispatchFS.Parse(os.Args[2:])
+			if len(dispatch) == 0 {
+				fmt.Println("-c is required for dispatch")
+				os.Exit(1)
+			} else {
+				v := must1(c.Dispatch(dispatch...))
+				fmt.Printf("%s\n", v)
+			}
+		},
+		"kill": func() {
+			v := must1(c.Kill())
+			fmt.Printf("%s\n", v)
+		},
+		"reload": func() {
+			v := must1(c.Reload())
+			fmt.Printf("%s\n", v)
+		},
+		"setcursor": func() {
+			setcursorFS.Parse(os.Args[2:])
+			v := must1(c.SetCursor(*theme, *size))
+			fmt.Printf("%s\n", v)
+		},
+		"version": func() {
+			v := must1(c.Version())
+			fmt.Printf("%s\n", mustMarshalIndent(v))
+		},
+	}
+
 	if len(os.Args) < 2 {
-		fmt.Println("Expected subcommand.")
+		fmt.Println("Usage:")
+		fmt.Printf("  %s [subcommand] <options>\n\n", os.Args[0])
+		fmt.Println("Available subcommands:")
+		for k := range m {
+			fmt.Printf("  - %s\n", k)
+		}
 		os.Exit(1)
 	}
 
-	switch os.Args[1] {
-	case "activewindow":
-		v := must1(c.ActiveWindow())
-		fmt.Printf("%s\n", mustMarshalIndent(v))
-	case "activeworkspace":
-		v := must1(c.ActiveWorkspace())
-		fmt.Printf("%s\n", mustMarshalIndent(v))
-	case "dispatch":
-		dispatchFS.Parse(os.Args[2:])
-		v := must1(c.Dispatch(dispatch...))
-		fmt.Printf("%s\n", v)
-	case "kill":
-		v := must1(c.Kill())
-		fmt.Printf("%s\n", v)
-	case "reload":
-		v := must1(c.Reload())
-		fmt.Printf("%s\n", v)
-	case "setcursor":
-		setcursorFS.Parse(os.Args[2:])
-		v := must1(c.SetCursor(*theme, *size))
-		fmt.Printf("%s\n", v)
-	case "version":
-		v := must1(c.Version())
-		fmt.Printf("%s\n", mustMarshalIndent(v))
-	default:
-		fmt.Printf("[ERROR] Unknown command: %s\n", os.Args[1])
+	subcmd := os.Args[1]
+	if run, ok := m[subcmd]; ok {
+		c = hyprland.MustClient()
+		run()
+	} else {
+		fmt.Printf("Unknown subcommand: %s\n", subcmd)
+		os.Exit(1)
 	}
 }
