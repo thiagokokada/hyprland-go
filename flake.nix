@@ -53,17 +53,12 @@
                     isNormalUser = true;
                   };
 
-                  environment = {
-                    systemPackages = with pkgs; [
-                      glxinfo # grab information about GPU
-                      go
-                      kitty
-                      nordzy-cursor-theme # used in SetCursor() test
-                    ];
-                    variables = {
-                      "WLR_RENDERER_ALLOW_SOFTWARE" = 1;
-                    };
-                  };
+                  environment.systemPackages = with pkgs; [
+                    glxinfo # grab information about GPU
+                    go
+                    kitty
+                    nordzy-cursor-theme # used in SetCursor() test
+                  ];
 
                   services.getty.autologinUser = user;
 
