@@ -174,7 +174,12 @@ func (c *RequestClient) Request(request RawRequest) (response RawResponse, err e
 
 	// Connect to the request socket
 	conn, err := net.DialUnix("unix", nil, c.conn)
-	defer conn.Close()
+	defer func() {
+		if e := conn.Close(); e == nil {
+			err = e
+		}
+	}()
+
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to socket: %w", err)
 	}
@@ -204,7 +209,7 @@ func (c *RequestClient) Request(request RawRequest) (response RawResponse, err e
 		}
 	}
 
-	return rbuf.Bytes(), nil
+	return rbuf.Bytes(), err
 }
 
 // Active window command, similar to 'hyprctl activewindow'.
