@@ -176,7 +176,7 @@ func (c *RequestClient) Request(request RawRequest) (response RawResponse, err e
 	conn, err := net.DialUnix("unix", nil, c.conn)
 	defer func() {
 		if e := conn.Close(); e == nil {
-			err = e
+			err = fmt.Errorf("error while closing socket: %w", e)
 		}
 	}()
 
