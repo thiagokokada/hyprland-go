@@ -2,11 +2,13 @@ package hyprland
 
 import "net"
 
-// Indicates the version where the structs are up-to-date
+// Indicates the version where the structs are up-to-date.
 const HYPRLAND_VERSION = "0.41.2"
 
+// Represents a raw request that is passed for Hyprland's socket.
 type RawRequest []byte
 
+// Represents a raw response returned from the Hyprland's socket.
 type RawResponse []byte
 
 // RequestClient is the main struct from hyprland-go.
@@ -17,8 +19,26 @@ type RequestClient struct {
 	conn     *net.UnixAddr
 }
 
-// Try to keep struct fields in the same order as the output for `hyprctl` for
-// sanity.
+// Unmarshal structs for requests.
+// Try to keep struct fields in the same order as the output for `hyprctl -j`
+// for sanity.
+
+type Bind struct {
+	Locked         bool   `json:"locked"`
+	Mouse          bool   `json:"mouse"`
+	Release        bool   `json:"release"`
+	Repeat         bool   `json:"repeat"`
+	NonConsuming   bool   `json:"non_consuming"`
+	HasDescription bool   `json:"has_description"`
+	ModMask        int    `json:"modmask"`
+	SubMap         string `json:"submap"`
+	Key            string `json:"key"`
+	KeyCode        int    `json:"keycode"`
+	CatchAll       bool   `json:"catch_all"`
+	Description    string `json:"description"`
+	Dispatcher     string `json:"dispatcher"`
+	Arg            string `json:"arg"`
+}
 
 type Client struct {
 	Address        string        `json:"address"`

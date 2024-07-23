@@ -227,6 +227,14 @@ func (c *RequestClient) ActiveWorkspace() (w Workspace, err error) {
 	return w, unmarshalResponse(response, &w)
 }
 
+func (c *RequestClient) Binds() (b []Bind, err error) {
+	response, err := c.doRequest("binds")
+	if err != nil {
+		return b, err
+	}
+	return b, unmarshalResponse(response, &b)
+}
+
 // Clients command, similar to 'hyprctl clients'.
 // Returns a [Client] object.
 func (c *RequestClient) Clients() (cl []Client, err error) {

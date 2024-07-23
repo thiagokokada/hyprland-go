@@ -151,6 +151,10 @@ func TestActiveWorkspace(t *testing.T) {
 	testCommandS(t, c.ActiveWorkspace, Workspace{})
 }
 
+func TestBinds(t *testing.T) {
+	testCommandS(t, c.Binds, []Bind{})
+}
+
 func TestClients(t *testing.T) {
 	testCommandS(t, c.Clients, []Client{})
 }
@@ -165,9 +169,8 @@ func TestDispatch(t *testing.T) {
 	})
 
 	if testing.Short() {
-		t.Skip("skipping slow test")
+		t.Skip("skip slow test")
 	}
-
 	testCommandRR(t, func() (RawResponse, error) {
 		return c.Dispatch(genParams("exec kitty", 40)...)
 	})
@@ -196,6 +199,9 @@ func TestKeyword(t *testing.T) {
 }
 
 func TestKill(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test that kill windows")
+	}
 	testCommandRR(t, c.Kill)
 }
 
