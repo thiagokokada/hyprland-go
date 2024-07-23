@@ -55,6 +55,7 @@
 
                   environment = {
                     systemPackages = with pkgs; [
+                      glxinfo # grab information about GPU
                       go
                       kitty
                       nordzy-cursor-theme # used in SetCursor() test
@@ -88,6 +89,7 @@
                         pkgs.writeShellScript "hyprland-go-test"
                           # bash
                           ''
+                            glxinfo -B > "$HOME/glxinfo"
                             cd ${./.}
                             go test -v 2>&1 | tee -a "$HOME/test.log"
                             echo $? > "$HOME/test-finished"
@@ -116,6 +118,7 @@
                   machine.wait_for_unit("multi-user.target")
                   machine.wait_for_file("${home}/test-finished")
 
+                  print(machine.succeed("cat ${home}/glxinfo || true"))
                   print(machine.succeed("cat ${home}/test.log"))
                   print(machine.succeed("test $(cat ${home}/test-finished) -eq 0"))
                 '';
