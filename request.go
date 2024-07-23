@@ -113,7 +113,7 @@ func (c *RequestClient) doRequest(command string, params ...string) (response Ra
 
 	var buf bytes.Buffer
 	for _, req := range requests {
-		resp, err := c.Request(req)
+		resp, err := c.RawRequest(req)
 		if err != nil {
 			return nil, fmt.Errorf("error while doing request: %w", err)
 		}
@@ -167,7 +167,7 @@ func NewClient(socket string) *RequestClient {
 // '[]byte("dispatch exec kitty")'.
 // Keep in mind that there is no validation. In case of an invalid request, the
 // response will generally be something different from "ok".
-func (c *RequestClient) Request(request RawRequest) (response RawResponse, err error) {
+func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, err error) {
 	if len(request) == 0 {
 		return nil, errors.New("empty request")
 	}

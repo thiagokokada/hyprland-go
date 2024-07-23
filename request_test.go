@@ -131,9 +131,9 @@ func TestValidateResponse(t *testing.T) {
 	}
 }
 
-func TestRequest(t *testing.T) {
+func TestRawRequest(t *testing.T) {
 	testCommandRR(t, func() (RawResponse, error) {
-		return c.Request([]byte("dispatch exec"))
+		return c.RawRequest([]byte("splash"))
 	})
 }
 
