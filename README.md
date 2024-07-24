@@ -13,7 +13,8 @@ An unofficial Go wrapper for Hyprland's IPC.
 go get -u github.com/thiagokokada/hyprland-go
 ```
 
-Look at the `examples` directory for examples on how to use the library.
+Look at the [`examples`](./examples) directory for examples on how to use the
+library.
 
 ## What is supported?
 
