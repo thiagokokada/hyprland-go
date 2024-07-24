@@ -2,7 +2,7 @@
 
 [![Go](https://github.com/thiagokokada/hyprland-go/actions/workflows/go.yml/badge.svg)](https://github.com/thiagokokada/hyprland-go/actions/workflows/go.yml)
 [![Test](https://github.com/thiagokokada/hyprland-go/actions/workflows/nix.yaml/badge.svg)](https://github.com/thiagokokada/hyprland-go/actions/workflows/nix.yaml)
-[![Hyprland](https://img.shields.io/badge/Made%20for-Hyprland-blue)](https://github.com/hyprwm/Hyprland)
+[![Hyprland](https://img.shields.io/badge/Hyprland-0.41.2-blue)](https://github.com/hyprwm/Hyprland)
 [![stability-alpha](https://img.shields.io/badge/stability-alpha-f4d03f.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#alpha)
 
 An unofficial Go wrapper for Hyprland's IPC.
