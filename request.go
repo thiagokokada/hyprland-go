@@ -223,6 +223,8 @@ func (c *RequestClient) ActiveWorkspace() (w Workspace, err error) {
 	return w, unmarshalResponse(response, &w)
 }
 
+// Animations command, similar to 'hyprctl animations'.
+// Returns a [Animation] object.
 func (c *RequestClient) Animations() (a [][]Animation, err error) {
 	response, err := c.doRequest("animations")
 	if err != nil {
@@ -231,6 +233,8 @@ func (c *RequestClient) Animations() (a [][]Animation, err error) {
 	return a, unmarshalResponse(response, &a)
 }
 
+// Binds command, similar to 'hyprctl binds'.
+// Returns a [Bind] object.
 func (c *RequestClient) Binds() (b []Bind, err error) {
 	response, err := c.doRequest("binds")
 	if err != nil {
@@ -279,7 +283,7 @@ func (c *RequestClient) Decorations(regex string) (d []Decoration, err error) {
 	return d, unmarshalResponse(response, &d)
 }
 
-// Decorations command, similar to `hyprctl devices`.
+// Devices command, similar to `hyprctl devices`.
 // Returns a [Devices] object.
 func (c *RequestClient) Devices() (d Devices, err error) {
 	response, err := c.doRequest("devices")
