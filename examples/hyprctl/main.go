@@ -8,16 +8,20 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/thiagokokada/hyprland-go"
 )
 
 var (
-	c   *hyprland.RequestClient
+	c *hyprland.RequestClient
+	// default error/usage output
 	out io.Writer = flag.CommandLine.Output()
 )
 
+// Needed for an acumulator flag, i.e.: can be passed multiple times, get the
+// results in a string array
 // https://stackoverflow.com/a/28323276
 type arrayFlags []string
 
@@ -41,8 +45,25 @@ func must(err error) {
 	}
 }
 
+// Unmarshal structs as JSON and indent output
 func mustMarshalIndent(v any) []byte {
 	return must1(json.MarshalIndent(v, "", "   "))
+}
+
+func usage(m map[string]func(args []string)) {
+	fmt.Fprintf(out, "Usage of %s:\n", os.Args[0])
+	fmt.Fprintf(out, "  %s [subcommand] <options>\n\n", os.Args[0])
+	fmt.Fprintf(out, "Available subcommands:\n")
+
+	// Sort keys before printing, since Go randomises order
+	subcommands := make([]string, 0, len(m))
+	for s := range m {
+		subcommands = append(subcommands, s)
+	}
+	sort.Strings(subcommands)
+	for _, s := range subcommands {
+		fmt.Fprintf(out, "  - %s\n", s)
+	}
 }
 
 func main() {
@@ -60,17 +81,19 @@ func main() {
 	theme := setcursorFS.String("theme", "Adwaita", "Cursor theme")
 	size := setcursorFS.Int("size", 32, "Cursor size")
 
-	m := map[string]func(){
-		"activewindow": func() {
+	// Map pf subcommands to a function to handle the subcommand. Will
+	// receive the subcommand arguments as parameter
+	m := map[string]func(args []string){
+		"activewindow": func(_ []string) {
 			v := must1(c.ActiveWindow())
 			fmt.Printf("%s\n", mustMarshalIndent(v))
 		},
-		"activeworkspace": func() {
+		"activeworkspace": func(_ []string) {
 			v := must1(c.ActiveWorkspace())
 			fmt.Printf("%s\n", mustMarshalIndent(v))
 		},
-		"batch": func() {
-			batchFS.Parse(os.Args[2:])
+		"batch": func(args []string) {
+			batchFS.Parse(args)
 			if len(batch) == 0 {
 				fmt.Fprintf(out, "Error: at least one '-c' is required for batch.\n")
 				os.Exit(1)
@@ -84,8 +107,8 @@ func main() {
 				fmt.Printf("%s\n", v)
 			}
 		},
-		"dispatch": func() {
-			dispatchFS.Parse(os.Args[2:])
+		"dispatch": func(args []string) {
+			dispatchFS.Parse(args)
 			if len(dispatch) == 0 {
 				fmt.Fprintf(out, "Error: at least one '-c' is required for dispatch.\n")
 				os.Exit(1)
@@ -94,33 +117,26 @@ func main() {
 				fmt.Printf("%s\n", v)
 			}
 		},
-		"kill": func() {
+		"kill": func(_ []string) {
 			v := must1(c.Kill())
 			fmt.Printf("%s\n", v)
 		},
-		"reload": func() {
+		"reload": func(_ []string) {
 			v := must1(c.Reload())
 			fmt.Printf("%s\n", v)
 		},
-		"setcursor": func() {
+		"setcursor": func(_ []string) {
 			setcursorFS.Parse(os.Args[2:])
 			v := must1(c.SetCursor(*theme, *size))
 			fmt.Printf("%s\n", v)
 		},
-		"version": func() {
+		"version": func(_ []string) {
 			v := must1(c.Version())
 			fmt.Printf("%s\n", mustMarshalIndent(v))
 		},
 	}
 
-	flag.Usage = func() {
-		fmt.Fprintf(out, "Usage of %s:\n", os.Args[0])
-		fmt.Fprintf(out, "  %s [subcommand] <options>\n\n", os.Args[0])
-		fmt.Fprintf(out, "Available subcommands:\n")
-		for k := range m {
-			fmt.Fprintf(out, "  - %s\n", k)
-		}
-	}
+	flag.Usage = func() { usage(m) }
 	flag.Parse()
 
 	if len(os.Args) < 2 {
@@ -128,12 +144,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	subcmd := os.Args[1]
-	if run, ok := m[subcmd]; ok {
+	subcommand := os.Args[1]
+	if run, ok := m[subcommand]; ok {
 		c = hyprland.MustClient()
-		run()
+		run(os.Args[2:])
 	} else {
-		fmt.Fprintf(out, "Error: unknown subcommand: %s\n", subcmd)
+		fmt.Fprintf(out, "Error: unknown subcommand: %s\n", subcommand)
 		os.Exit(1)
 	}
 }
