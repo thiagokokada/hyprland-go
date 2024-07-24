@@ -130,6 +130,14 @@ func TestPrepareRequestsError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func BenchmarkPrepareRequests(b *testing.B) {
+	params := genParams("param", 10000)
+
+	for i := 0; i < b.N; i++ {
+		prepareRequests("command", params)
+	}
+}
+
 func TestValidateResponse(t *testing.T) {
 	// Dummy client to allow this test to run without Hyprland
 	c := DummyClient{}
@@ -159,6 +167,17 @@ func TestValidateResponse(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		})
+	}
+}
+
+func BenchmarkValidateResponse(b *testing.B) {
+	// Dummy client to allow this test to run without Hyprland
+	c := DummyClient{}
+	params := genParams("param", 10000)
+	response := strings.Repeat("ok"+strings.Repeat(" ", 1000), 10000)
+
+	for i := 0; i < b.N; i++ {
+		c.validateResponse(params, RawResponse(response))
 	}
 }
 
