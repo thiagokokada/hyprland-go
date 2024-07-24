@@ -31,6 +31,13 @@
               user = "alice";
               uid = 1000;
               home = "/home/${user}";
+
+              # Testing related file paths
+              covHtml = "${home}/hyprland-go.html";
+              covOut = "${home}/hyprland-go.out";
+              glxinfoOut = "${home}/glxinfo.out";
+              testFinished = "${home}/test-finished";
+              testLog = "${home}/test.log";
             in
             pkgs.nixosTest {
               name = "hyprland-go";
@@ -84,11 +91,15 @@
                         pkgs.writeShellScript "hyprland-go-test"
                           # bash
                           ''
-                            glxinfo -B > "$HOME/glxinfo"
-                            cd "${./.}"
-                            go test -cover -v ./... > "$HOME/test.log" 2>&1
-                            echo "$?" > "$HOME/test-finished"
-                            hyprctl dispatch exit
+                            set -euo pipefail
+
+                            trap 'echo $? > ${testFinished}' EXIT
+
+                            glxinfo -B > ${glxinfoOut} || true
+                            cd ${./.}
+                            go test -coverprofile ${covOut} -v > ${testLog} 2>&1
+                            go tool cover -html=${covOut} -o ${covHtml}
+                            hyprctl dispatch exit || true
                           '';
                       hyprlandConf =
                         pkgs.writeText "hyprland.conf"
@@ -111,11 +122,14 @@
                   start_all()
 
                   machine.wait_for_unit("multi-user.target")
-                  machine.wait_for_file("${home}/test-finished")
+                  machine.wait_for_file("${testFinished}")
 
-                  print(machine.succeed("cat ${home}/glxinfo || true"))
-                  print(machine.succeed("cat ${home}/test.log"))
-                  print(machine.succeed("exit $(cat ${home}/test-finished)"))
+                  print(machine.succeed("cat ${glxinfoOut} || true"))
+                  print(machine.succeed("cat ${testLog}"))
+                  print(machine.succeed("exit $(cat ${testFinished})"))
+
+                  machine.copy_from_vm("${covOut}")
+                  machine.copy_from_vm("${covHtml}")
                 '';
             };
         }
