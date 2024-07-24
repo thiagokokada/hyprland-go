@@ -85,9 +85,9 @@
                           # bash
                           ''
                             glxinfo -B > "$HOME/glxinfo"
-                            cd ${./.}
-                            go test -v > "$HOME/test.log" 2>&1
-                            echo $? > "$HOME/test-finished"
+                            cd "${./.}"
+                            go test -cover -v ./... > "$HOME/test.log" 2>&1
+                            echo "$?" > "$HOME/test-finished"
                             hyprctl dispatch exit
                           '';
                       hyprlandConf =
