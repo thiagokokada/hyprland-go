@@ -32,7 +32,7 @@ library.
 - [Raw IPC commands:](https://wiki.hyprland.org/IPC/): while not recommended
   for general usage, sending commands directly to the IPC socket of Hyprland is
   supported for i.e.: performance, e.g.: `c.RawRequest("[[BATCH]] dispatch exec
-  kitty, keyword bind general:border_size 1")`
+  kitty, keyword general:border_size 1")`
 
 ## Planned
 
@@ -44,7 +44,7 @@ If you are developing inside a Hyprland session, and have Go installed, you can
 simply run:
 
 ```console
-# -short flag recommended otherwise this will run some possibly dangerous tests
+# -short flag is recommended otherwise this will run some possibly dangerous tests, like TestKill()
 go test -short -v
 ```
 
