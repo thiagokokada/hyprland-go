@@ -128,8 +128,9 @@
                   print(machine.succeed("cat ${testLog}"))
                   print(machine.succeed("exit $(cat ${testFinished})"))
 
-                  machine.copy_from_vm("${covOut}")
-                  machine.copy_from_vm("${covHtml}")
+                  # Not working for some reason
+                  # machine.copy_from_vm("${covOut}")
+                  # machine.copy_from_vm("${covHtml}")
                 '';
             };
         }

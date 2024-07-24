@@ -20,8 +20,8 @@ jobs:
 
     - run: nix flake check -L
 
-    - uses: actions/upload-artifact@v4
-      with:
-        name: coverage
-        path: |
-          /nix/store/*-nixos-test-driver-hyprland-go*/**/hyprland-go.{out,html}
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: coverage
+    #     path: |
+    #       hyprland-go.*
