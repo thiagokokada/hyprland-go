@@ -28,6 +28,10 @@ Look at the `examples` directory for examples on how to use the library.
   32)`.
   + Commands that returns a JSON in `hyprctl -j` will return a proper struct,
     e.g.: `c.ActiveWorkspace().Monitor`
+- [Raw IPC commands:](https://wiki.hyprland.org/IPC/): while not recommended
+  for general usage, sending commands directly to the IPC socket of Hyprland is
+  supported for i.e.: performance, e.g.: `c.RawRequest("[[BATCH]] dispatch exec
+  kitty, keyword bind general:border_size 1")`
 
 ## Planned
 
