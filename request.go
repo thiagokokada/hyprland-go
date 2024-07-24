@@ -55,7 +55,7 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 		}
 		requests = append(requests, []byte(request))
 	default:
-		var buf bytes.Buffer
+		buf := bytes.NewBuffer(nil)
 
 		const batch = "[[BATCH]]"
 		// Add [[BATCH]] to the buffer
@@ -81,7 +81,7 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 				// If the current length of the buffer +
 				// command + param is less than BUF_SIZE, the
 				// request will fit
-				curLen = prepareRequest(&buf, command, param)
+				curLen = prepareRequest(buf, command, param)
 			} else {
 				// If not, we will need to split the request,
 				// so append current buffer contents to the
@@ -94,7 +94,7 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 
 				// And finally, add the contents of the request
 				// to the buffer
-				curLen = prepareRequest(&buf, command, param)
+				curLen = prepareRequest(buf, command, param)
 			}
 		}
 		// Append any remaining buffer content to requests array
@@ -153,7 +153,7 @@ func (c *RequestClient) doRequest(command string, params ...string) (response Ra
 		return nil, fmt.Errorf("error while preparing request: %w", err)
 	}
 
-	var buf bytes.Buffer
+	buf := bytes.NewBuffer(nil)
 	for _, req := range requests {
 		resp, err := c.RawRequest(req)
 		if err != nil {
@@ -234,7 +234,7 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 	}
 
 	// Get the response back
-	var rbuf bytes.Buffer
+	rbuf := bytes.NewBuffer(nil)
 	sbuf := make([]byte, BUF_SIZE)
 	for {
 		n, err := conn.Read(sbuf)
