@@ -36,9 +36,9 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 	case 0:
 		if len(command) >= BUF_SIZE {
 			return nil, fmt.Errorf(
-				"command is too long (%d>%d): %s",
-				BUF_SIZE,
+				"command is too long (%d>=%d): %s",
 				len(command),
+				BUF_SIZE,
 				command,
 			)
 		}
@@ -47,9 +47,9 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 		request := command + " " + params[0]
 		if len(request) >= BUF_SIZE {
 			return nil, fmt.Errorf(
-				"command is too long (%d>%d): %s",
-				BUF_SIZE,
+				"command is too long (%d>=%d): %s",
 				len(request),
+				BUF_SIZE,
 				request,
 			)
 		}
@@ -71,9 +71,10 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 				// than BUF_SIZE, return an error since it will
 				// not fit the socket
 				return nil, fmt.Errorf(
-					"command is too long (%d>%d): %s %s",
-					cmdLen,
+					"command is too long (%d>=%d): %s%s %s;",
+					len(batch)+cmdLen,
 					BUF_SIZE,
+					batch,
 					command,
 					param,
 				)

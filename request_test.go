@@ -118,13 +118,13 @@ func TestPrepareRequestsError(t *testing.T) {
 	assert.Error(t, err)
 
 	_, err = prepareRequests(
-		strings.Repeat("c", BUF_SIZE-len("p")),
+		strings.Repeat("c", BUF_SIZE-len("p ")),
 		genParams("p", 1),
 	)
 	assert.Error(t, err)
 
 	_, err = prepareRequests(
-		strings.Repeat("c", BUF_SIZE-len("[[BATCH]]"+"p")),
+		strings.Repeat("c", BUF_SIZE-len("[[BATCH]]"+"p ;")),
 		genParams("p", 5),
 	)
 	assert.Error(t, err)
