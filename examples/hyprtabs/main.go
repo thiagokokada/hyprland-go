@@ -36,6 +36,7 @@ func main() {
 			"layoutmsg swapwithmaster master",
 		)
 	} else {
+		var cmdbuf []string
 		aWorkspace := must1(client.ActiveWorkspace())
 		clients := must1(client.Clients())
 
@@ -48,7 +49,7 @@ func main() {
 		}
 
 		// Start by creating a new group
-		must1(client.Dispatch("togglegroup"))
+		cmdbuf = append(cmdbuf, "togglegroup")
 		for _, w := range windows {
 			// Move each window inside the group
 			// Once is not enough in case of very "deep" layouts,
@@ -60,22 +61,23 @@ func main() {
 			// supported moving windows based on address and not
 			// only positions
 			for i := 0; i < 2; i++ {
-				must1(client.Dispatch(
-					fmt.Sprintf("focuswindow address:%s", w),
-					"layoutmsg swapwithmaster auto",
-					"moveintogroup l",
-					"moveintogroup r",
-					"moveintogroup u",
-					"moveintogroup d",
-				))
+				cmdbuf = append(cmdbuf, fmt.Sprintf("focuswindow address:%s", w))
+				cmdbuf = append(cmdbuf, "layoutmsg swapwithmaster auto")
+				cmdbuf = append(cmdbuf, "moveintogroup l")
+				cmdbuf = append(cmdbuf, "moveintogroup r")
+				cmdbuf = append(cmdbuf, "moveintogroup u")
+				cmdbuf = append(cmdbuf, "moveintogroup d")
 			}
 		}
-		must1(client.Dispatch(
-			// Focus in the active window at the end
-			fmt.Sprintf("focuswindow address:%s", aWindow.Address),
-			// Workaround window sometimes being stretch
-			"fullscreen",
-			"fullscreen",
-		))
+		// Focus in the active window at the end
+		cmdbuf = append(cmdbuf, fmt.Sprintf("focuswindow address:%s", aWindow.Address))
+		// Workaround window sometimes being stretch
+		cmdbuf = append(cmdbuf, "fullscreen")
+		cmdbuf = append(cmdbuf, "fullscreen")
+
+		// Dispatch buffered commands in one call for performance,
+		// hyprland-go will take care of splitting it in smaller calls
+		// if necessary
+		must1(client.Dispatch(cmdbuf...))
 	}
 }
