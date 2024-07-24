@@ -38,6 +38,41 @@ library.
 
 - [Events](https://wiki.hyprland.org/Plugins/Development/Event-list/)
 
+## Development
+
+If you are developing inside a Hyprland session, and have Go installed, you can
+simply run:
+
+```console
+# -short flag recommended otherwise this will run some possibly dangerous tests
+go test -short -v
+```
+
+Keep in mind that this will probably mess your current session. We will reload
+your configuration at the end, but any dynamic configuration will be lost.
+
+We also have tests running in CI based in a [NixOS](https://nixos.org/) VM
+using [`nixosTests`](https://wiki.nixos.org/wiki/NixOS_VM_tests). Check the
+[`flake.nix`](./flake.nix) file. This will automatically start a VM running
+Hyprland and run the Go tests inside it.
+
+To run the NixOS tests locally, install [Nix](https://nixos.org/download/) in
+any Linux system and run:
+
+```console
+nix --experimental-features 'nix-command flakes' flake check -L
+```
+
+If you want to debug tests, it is possible to run the VM in interactive mode by
+running:
+
+```console
+nix --experimental-features 'nix-command flakes' build .#checks.x86-64_linux.testVm.driverInteractive
+./result
+```
+
+And you can run `start_all()` to start the VM.
+
 ## Credits
 
 - [hyprland-ipc-client](https://github.com/labi-le/hyprland-ipc-client) for
