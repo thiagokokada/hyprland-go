@@ -248,7 +248,11 @@ func TestGetOption(t *testing.T) {
 
 func TestKeyword(t *testing.T) {
 	testCommandRR(t, func() (RawResponse, error) {
-		return c.Keyword("general:border_size 1", "general:border_size 5")
+		return c.Keyword(
+			Keyword{"general:border_size", "5"},
+			Keyword{"general:gaps_in", "5"},
+			Keyword{"general:gaps_out", "10"},
+		)
 	})
 }
 

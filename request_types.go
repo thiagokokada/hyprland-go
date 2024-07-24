@@ -113,6 +113,11 @@ type Devices struct {
 
 type Output string
 
+type Keyword struct {
+	Keyword string
+	Param   string
+}
+
 type Layers map[Output]Layer
 
 type Layer struct {

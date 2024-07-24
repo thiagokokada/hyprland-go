@@ -317,7 +317,11 @@ func (c *RequestClient) GetOption(name string) (o Option, err error) {
 // mode, similar to 'hyprctl keyword --batch'.
 // Returns the raw response, that may be useful for further validations,
 // especially when [RequestClient] 'Validation' is set to false.
-func (c *RequestClient) Keyword(params ...string) (r RawResponse, err error) {
+func (c *RequestClient) Keyword(keywords ...Keyword) (r RawResponse, err error) {
+	var params []string
+	for _, k := range keywords {
+		params = append(params, fmt.Sprintf("%s %s", k.Keyword, k.Param))
+	}
 	response, err := c.doRequest("keyword", params...)
 	if err != nil {
 		return response, err
