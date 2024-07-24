@@ -2,11 +2,12 @@
   description = "Hyprland's IPC bindings for Go";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.follows = "hyprland/nixpkgs";
+    hyprland.url = "github:hyprwm/Hyprland/v0.41.2";
   };
 
   outputs =
-    { nixpkgs, ... }:
+    { nixpkgs, hyprland, ... }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -17,7 +18,13 @@
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
 
       # Nixpkgs instantiated for supported system types.
-      nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
+      nixpkgsFor = forAllSystems (
+        system:
+        import nixpkgs {
+          inherit system;
+          overlays = [ hyprland.overlays.default ];
+        }
+      );
     in
     {
       checks = forAllSystems (
