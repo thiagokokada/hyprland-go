@@ -15,44 +15,92 @@ import (
 	"github.com/thiagokokada/hyprland-go/internal/assert"
 )
 
-const (
-	BUF_SIZE     = 8192
-	MAX_COMMANDS = 30
-)
+const BUF_SIZE = 8192
 
-func prepareRequests(command string, params []string) (requests []RawRequest) {
+func prepareRequest(buf *bytes.Buffer, command string, param string) int {
+	buf.WriteString(command)
+	buf.WriteString(" ")
+	buf.WriteString(param)
+	buf.WriteString(";")
+
+	return buf.Len()
+}
+
+func prepareRequests(command string, params []string) (requests []RawRequest, err error) {
 	if command == "" {
+		// Panic since this is not supposed to happen, i.e.: only by
+		// misuse since this function is internal
 		panic("empty command")
 	}
 	switch len(params) {
 	case 0:
+		if len(command) >= BUF_SIZE {
+			return nil, fmt.Errorf(
+				"command is too long (%d>%d): %s",
+				BUF_SIZE,
+				len(command),
+				command,
+			)
+		}
 		requests = append(requests, []byte(command))
 	case 1:
-		requests = append(requests, []byte(command+" "+params[0]))
-	default:
-		// Hyprland IPC has a hidden limit for commands, so we are
-		// splitting the commands in multiple requests if the user pass
-		// more commands that it is supported
-		var buf bytes.Buffer
-		for i := 0; i < len(params); i += MAX_COMMANDS {
-			end := i + MAX_COMMANDS
-			if end > len(params) {
-				end = len(params)
-			}
-
-			buf.Reset()
-			buf.WriteString("[[BATCH]]")
-			for j := i; j < end; j++ {
-				buf.WriteString(command)
-				buf.WriteString(" ")
-				buf.WriteString(params[j])
-				buf.WriteString(";")
-			}
-
-			requests = append(requests, buf.Bytes())
+		request := command + " " + params[0]
+		if len(request) >= BUF_SIZE {
+			return nil, fmt.Errorf(
+				"command is too long (%d>%d): %s",
+				BUF_SIZE,
+				len(request),
+				request,
+			)
 		}
+		requests = append(requests, []byte(request))
+	default:
+		var buf bytes.Buffer
+
+		const batch = "[[BATCH]]"
+		// Add [[BATCH]] to the buffer
+		buf.WriteString(batch)
+		// Initialise current length of buffer
+		curLen := buf.Len()
+
+		for _, param := range params {
+			// Get the current command + param length
+			cmdLen := len(command) + len(param) + 2 // ; + <space>
+			if len(batch)+cmdLen >= BUF_SIZE {
+				// If batch + command + param length is bigger
+				// than BUF_SIZE, return an error since it will
+				// not fit the socket
+				return nil, fmt.Errorf(
+					"command is too long (%d>%d): %s %s",
+					cmdLen,
+					BUF_SIZE,
+					command,
+					param,
+				)
+			} else if curLen+cmdLen < BUF_SIZE {
+				// If the current length of the buffer +
+				// command + param is less than BUF_SIZE, the
+				// request will fit
+				curLen = prepareRequest(&buf, command, param)
+			} else {
+				// If not, we will need to split the request,
+				// so append current buffer contents to the
+				// requests array
+				requests = append(requests, buf.Bytes())
+
+				// Reset the current buffer and add [[BATCH]]
+				buf.Reset()
+				buf.WriteString(batch)
+
+				// And finally, add the contents of the request
+				// to the buffer
+				curLen = prepareRequest(&buf, command, param)
+			}
+		}
+		// Append any remaining buffer content to requests array
+		requests = append(requests, buf.Bytes())
 	}
-	return requests
+	return requests, nil
 }
 
 func (c *RequestClient) validateResponse(params []string, response RawResponse) error {
@@ -100,7 +148,10 @@ func unmarshalResponse(response RawResponse, v any) (err error) {
 }
 
 func (c *RequestClient) doRequest(command string, params ...string) (response RawResponse, err error) {
-	requests := prepareRequests(command, params)
+	requests, err := prepareRequests(command, params)
+	if err != nil {
+		return nil, fmt.Errorf("error while preparing request: %w", err)
+	}
 
 	var buf bytes.Buffer
 	for _, req := range requests {

@@ -77,32 +77,57 @@ func TestPrepareRequests(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("tests_%v-%v", tt.command, tt.params), func(t *testing.T) {
-			requests := prepareRequests(tt.command, tt.params)
+			requests, err := prepareRequests(tt.command, tt.params)
+			assert.NoError(t, err)
 			for i, e := range tt.expected {
 				assert.Equal(t, string(requests[i]), e)
 			}
 		})
 	}
+}
 
+func TestPrepareRequestsMass(t *testing.T) {
 	// test massive amount of parameters
-	massTests := []struct {
+	tests := []struct {
 		command  string
 		params   []string
 		expected int
 	}{
-		{"command", genParams("param", 5), 1},
-		{"command", genParams("param", 15), 1},
-		{"command", genParams("param", 30), 1},
-		{"command", genParams("param", 60), 2},
-		{"command", genParams("param", 90), 3},
-		{"command", genParams("param", 100), 4},
+		{"command", genParams("very big param list", 1), 1},
+		{"command", genParams("very big param list", 50), 1},
+		{"command", genParams("very big param list", 100), 1},
+		{"command", genParams("very big param list", 500), 2},
+		{"command", genParams("very big param list", 1000), 4},
+		{"command", genParams("very big param list", 5000), 18},
+		{"command", genParams("very big param list", 10000), 35},
 	}
-	for _, tt := range massTests {
+	for _, tt := range tests {
 		t.Run(fmt.Sprintf("mass_tests_%v-%d", tt.command, len(tt.params)), func(t *testing.T) {
-			requests := prepareRequests(tt.command, tt.params)
+			requests, err := prepareRequests(tt.command, tt.params)
+			assert.NoError(t, err)
 			assert.Equal(t, len(requests), tt.expected)
 		})
 	}
+}
+
+func TestPrepareRequestsError(t *testing.T) {
+	_, err := prepareRequests(
+		strings.Repeat("c", BUF_SIZE),
+		nil,
+	)
+	assert.Error(t, err)
+
+	_, err = prepareRequests(
+		strings.Repeat("c", BUF_SIZE-len("p")),
+		genParams("p", 1),
+	)
+	assert.Error(t, err)
+
+	_, err = prepareRequests(
+		strings.Repeat("c", BUF_SIZE-len("[[BATCH]]"+"p")),
+		genParams("p", 5),
+	)
+	assert.Error(t, err)
 }
 
 func TestValidateResponse(t *testing.T) {
