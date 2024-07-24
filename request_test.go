@@ -273,7 +273,7 @@ func TestReload(t *testing.T) {
 
 func TestSetCursor(t *testing.T) {
 	testCommandRR(t, func() (RawResponse, error) {
-		return c.SetCursor("Nordzy-cursors", 32)
+		return c.SetCursor("Adwaita", 32)
 	})
 }
 

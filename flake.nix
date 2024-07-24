@@ -62,9 +62,9 @@
 
                   environment.systemPackages = with pkgs; [
                     glxinfo # grab information about GPU
+                    gnome-themes-extra # used in SetCursor() test
                     go
                     kitty
-                    nordzy-cursor-theme # used in SetCursor() test
                   ];
 
                   services.getty.autologinUser = user;
