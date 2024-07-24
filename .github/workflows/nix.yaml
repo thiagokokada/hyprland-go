@@ -19,3 +19,9 @@ jobs:
     - run: nix build -L
 
     - run: nix flake check -L
+
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: coverage
+    #     path: |
+    #       hyprland-go.*
