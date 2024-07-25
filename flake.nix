@@ -94,7 +94,7 @@
 
                             glxinfo -B > ${glxinfoOut} || true
                             cd ${./.}
-                            go test -coverprofile ${covOut} -v > ${testLog} 2>&1
+                            go test -bench=. -coverprofile ${covOut} -v > ${testLog} 2>&1
                             go tool cover -html=${covOut} -o ${covHtml}
                           '';
                       hyprlandConf =
