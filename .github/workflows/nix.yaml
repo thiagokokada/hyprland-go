@@ -16,12 +16,14 @@ jobs:
 
     - uses: DeterminateSystems/magic-nix-cache-action@main
 
-    - run: nix build -L
+    - name: build package
+      run: nix build -L
 
-    - run: nix flake check -L
+    - name: run VM tests
+      run: nix build .#checks.x86_64-linux.testVm -L
 
-    # - uses: actions/upload-artifact@v4
-    #   with:
-    #     name: coverage
-    #     path: |
-    #       hyprland-go.*
+    - uses: actions/upload-artifact@v4
+      with:
+        name: coverage
+        path: |
+          result/hyprland-go.*
