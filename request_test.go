@@ -112,19 +112,19 @@ func TestPrepareRequestsMass(t *testing.T) {
 
 func TestPrepareRequestsError(t *testing.T) {
 	_, err := prepareRequests(
-		strings.Repeat("c", BUF_SIZE),
+		strings.Repeat("c", BUF_SIZE-1),
 		nil,
 	)
 	assert.Error(t, err)
 
 	_, err = prepareRequests(
-		strings.Repeat("c", BUF_SIZE-len("p ")),
+		strings.Repeat("c", BUF_SIZE-len("p ")-1),
 		genParams("p", 1),
 	)
 	assert.Error(t, err)
 
 	_, err = prepareRequests(
-		strings.Repeat("c", BUF_SIZE-len("[[BATCH]]"+"p ;")),
+		strings.Repeat("c", BUF_SIZE-len("[[BATCH]] p;")-1),
 		genParams("p", 5),
 	)
 	assert.Error(t, err)
