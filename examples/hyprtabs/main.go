@@ -1,9 +1,9 @@
 // Group all windows in the current workspace, or ungroup, basically similar to
 // how i3/sway tabbed container works.
 // This script works better with "master" layouts (since the layout is more
-// predicatable), but it also works in "dwindle" layouts as long the layout
-// is not too "deep" (e.g.: too many windows in the same workspace).
-// See https://github.com/hyprwm/Hyprland/issues/2822 for more details.
+// predictable), but it also works in "dwindle" layouts as long the layout is
+// not too "deep" (e.g.: too many windows in the same workspace). See
+// https://github.com/hyprwm/Hyprland/issues/2822 for more details.
 package main
 
 import (
