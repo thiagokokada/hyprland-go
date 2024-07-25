@@ -99,7 +99,6 @@
                             cd ${./.}
                             go test -coverprofile ${covOut} -v > ${testLog} 2>&1
                             go tool cover -html=${covOut} -o ${covHtml}
-                            hyprctl dispatch exit || true
                           '';
                       hyprlandConf =
                         pkgs.writeText "hyprland.conf"
@@ -107,6 +106,10 @@
                           ''
                             bind = SUPER, Q, exec, kitty # Bind() test need at least one bind
                             exec-once = kitty sh -c ${testScript}
+                            cursor {
+                              # improve cursor in VM
+                              no_hardware_cursors = true
+                            }
                           '';
                     in
                     # bash
