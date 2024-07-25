@@ -25,7 +25,6 @@ func must(err error) {
 
 func main() {
 	client := hyprland.MustClient()
-	client.Validate = false
 
 	aWindow := must1(client.ActiveWindow())
 	if len(aWindow.Grouped) > 0 {
@@ -71,9 +70,6 @@ func main() {
 		}
 		// Focus in the active window at the end
 		cmdbuf = append(cmdbuf, fmt.Sprintf("focuswindow address:%s", aWindow.Address))
-		// Workaround window sometimes being stretch
-		cmdbuf = append(cmdbuf, "fullscreen")
-		cmdbuf = append(cmdbuf, "fullscreen")
 
 		// Dispatch buffered commands in one call for performance,
 		// hyprland-go will take care of splitting it in smaller calls
