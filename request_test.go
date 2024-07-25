@@ -183,9 +183,11 @@ func TestValidateResponse(t *testing.T) {
 	}{
 		// empty response should error
 		{genParams("param", 1), []Response{}, []Response{""}, true},
-		// happy path
+		// happy path, nil param
+		{nil, []Response{"ok"}, []Response{"ok"}, false},
+		// happy path, 1 param
 		{genParams("param", 1), []Response{"ok"}, []Response{"ok"}, false},
-		// happy path
+		// happy path, multiple params
 		{genParams("param", 2), []Response{"ok", "ok"}, []Response{"ok", "ok"}, false},
 		// missing response
 		{genParams("param", 2), []Response{"ok"}, []Response{"ok"}, true},
