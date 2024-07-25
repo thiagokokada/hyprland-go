@@ -11,6 +11,9 @@ type RawRequest []byte
 // Represents a raw response returned from the Hyprland's socket.
 type RawResponse []byte
 
+// Represents a parsed response returned from the Hyprland's socket.
+type Response string
+
 // RequestClient is the main struct from hyprland-go.
 // You may want to set 'Validate' as false to avoid (possibly costly)
 // validations, at the expense of not reporting some errors in the IPC.

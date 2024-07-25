@@ -3,7 +3,6 @@ package hyprland
 import (
 	"fmt"
 	"os"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -30,16 +29,19 @@ func checkEnvironment(t *testing.T) {
 	}
 }
 
-func testCommandRR(t *testing.T, command func() (RawResponse, error)) {
-	testCommand(t, command, RawResponse(""))
+func testCommandR(t *testing.T, command func() (Response, error)) {
+	testCommand(t, command, "")
+}
+
+func testCommandRs(t *testing.T, command func() ([]Response, error)) {
+	testCommand(t, command, []Response{})
 }
 
 func testCommand[T any](t *testing.T, command func() (T, error), emptyValue any) {
 	checkEnvironment(t)
 	got, err := command()
 	assert.NoError(t, err)
-	assert.Equal(t, reflect.TypeOf(got), reflect.TypeOf(emptyValue))
-	assert.True(t, reflect.DeepEqual(got, emptyValue))
+	assert.DeepNotEqual(t, got, emptyValue)
 	t.Logf("got: %+v", got)
 }
 
@@ -76,7 +78,7 @@ func TestPrepareRequests(t *testing.T) {
 		{"command", []string{"param0", "param1"}, []string{"[[BATCH]]command param0;command param1;"}},
 	}
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("tests_%v-%v", tt.command, tt.params), func(t *testing.T) {
+		t.Run(fmt.Sprintf("tests_%s-%s", tt.command, tt.params), func(t *testing.T) {
 			requests, err := prepareRequests(tt.command, tt.params)
 			assert.NoError(t, err)
 			for i, e := range tt.expected {
@@ -102,7 +104,7 @@ func TestPrepareRequestsMass(t *testing.T) {
 		{"command", genParams("very big param list", 10000), 35},
 	}
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("mass_tests_%v-%d", tt.command, len(tt.params)), func(t *testing.T) {
+		t.Run(fmt.Sprintf("mass_tests_%s-%d", tt.command, len(tt.params)), func(t *testing.T) {
 			requests, err := prepareRequests(tt.command, tt.params)
 			assert.NoError(t, err)
 			assert.Equal(t, len(requests), tt.expected)
@@ -138,31 +140,58 @@ func BenchmarkPrepareRequests(b *testing.B) {
 	}
 }
 
-func TestValidateResponse(t *testing.T) {
-	// Dummy client to allow this test to run without Hyprland
-	c := DummyClient{}
-
+func TestParseResponse(t *testing.T) {
 	tests := []struct {
-		params    []string
-		response  RawResponse
-		validate  bool
-		expectErr bool
+		response RawResponse
+		want     int
 	}{
-		{genParams("param", 1), RawResponse("ok"), true, false},
-		{genParams("param", 2), RawResponse("ok\r\nInvalid response"), false, false},
-		{genParams("param", 2), RawResponse("ok"), true, true},
-		{genParams("param", 2), RawResponse("ok"), false, false},
-		{genParams("param", 1), RawResponse("ok\r\nok"), true, false}, // not sure about this case, will leave like this for now
-		{genParams("param", 5), RawResponse(strings.Repeat("ok\r\n", 5)), true, false},
-		{genParams("param", 6), RawResponse(strings.Repeat("ok\r\n", 5)), true, true},
-		{genParams("param", 6), RawResponse(strings.Repeat("ok\r\n\r\n", 5)), false, false},
-		{genParams("param", 10), RawResponse(strings.Repeat("ok\r\n\n", 10)), true, false},
+		{RawResponse("ok"), 1},
+		{RawResponse("ok\r\nok"), 2},
+		{RawResponse("   ok  "), 1},
+		{RawResponse(strings.Repeat("ok\r\n", 5)), 5},
+		{RawResponse(strings.Repeat("ok\r\n\r\n", 5)), 5},
+		{RawResponse(strings.Repeat("ok\r\n\n", 10)), 10},
 	}
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("tests_%v-%v", tt.params, tt.response), func(t *testing.T) {
-			c.Validate = tt.validate
-			err := c.validateResponse(tt.params, tt.response)
-			if tt.expectErr {
+		t.Run(fmt.Sprintf("tests_%s-%d", tt.response, tt.want), func(t *testing.T) {
+			response, err := parseResponse(tt.response)
+			assert.NoError(t, err)
+			assert.Equal(t, len(response), tt.want)
+			for _, r := range response {
+				assert.Equal(t, r, "ok")
+			}
+		})
+	}
+}
+
+func TestValidateResponse(t *testing.T) {
+	tests := []struct {
+		validate bool
+		params   []string
+		response []Response
+		want     []Response
+		wantErr  bool
+	}{
+		// empty response should error
+		{true, genParams("param", 1), []Response{}, []Response{""}, true},
+		// happy path
+		{true, genParams("param", 1), []Response{"ok"}, []Response{"ok"}, false},
+		// happy path
+		{true, genParams("param", 2), []Response{"ok", "ok"}, []Response{"ok", "ok"}, false},
+		// missing response
+		{true, genParams("param", 2), []Response{"ok"}, []Response{"ok"}, true},
+		// disable validation
+		{false, genParams("param", 2), []Response{"ok"}, []Response{"ok"}, false},
+		// non-ok response
+		{true, genParams("param", 2), []Response{"ok", "Invalid command"}, []Response{"ok", "Invalid command"}, true},
+		// disable validation
+		{false, genParams("param", 2), []Response{"ok", "Invalid command"}, []Response{"ok", "Invalid command"}, false},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("tests_%v-%v-%v", tt.validate, tt.params, tt.response), func(t *testing.T) {
+			response, err := validateResponse(tt.validate, tt.params, tt.response)
+			assert.DeepEqual(t, response, tt.want)
+			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
@@ -171,21 +200,10 @@ func TestValidateResponse(t *testing.T) {
 	}
 }
 
-func BenchmarkValidateResponse(b *testing.B) {
-	// Dummy client to allow this test to run without Hyprland
-	c := DummyClient{}
-	params := genParams("param", 1000)
-	response := strings.Repeat("ok"+strings.Repeat(" ", 1000), 1000)
-
-	for i := 0; i < b.N; i++ {
-		c.validateResponse(params, RawResponse(response))
-	}
-}
-
 func TestRawRequest(t *testing.T) {
-	testCommandRR(t, func() (RawResponse, error) {
+	testCommand(t, func() (RawResponse, error) {
 		return c.RawRequest([]byte("splash"))
-	})
+	}, RawResponse{})
 }
 
 func TestActiveWindow(t *testing.T) {
@@ -230,7 +248,7 @@ func TestDevices(t *testing.T) {
 }
 
 func TestDispatch(t *testing.T) {
-	testCommandRR(t, func() (RawResponse, error) {
+	testCommandRs(t, func() ([]Response, error) {
 		return c.Dispatch("exec kitty sh -c 'echo Testing hyprland-go && sleep 1 && exit 0'")
 	})
 
@@ -292,7 +310,7 @@ func TestGetOption(t *testing.T) {
 }
 
 func TestKeyword(t *testing.T) {
-	testCommandRR(t, func() (RawResponse, error) {
+	testCommandRs(t, func() ([]Response, error) {
 		return c.Keyword("general:border_size 1", "general:border_size 5")
 	})
 }
@@ -301,7 +319,7 @@ func TestKill(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test that kill window")
 	}
-	testCommandRR(t, c.Kill)
+	testCommandR(t, c.Kill)
 }
 
 func TestLayers(t *testing.T) {
@@ -313,11 +331,11 @@ func TestMonitors(t *testing.T) {
 }
 
 func TestReload(t *testing.T) {
-	testCommandRR(t, c.Reload)
+	testCommandR(t, c.Reload)
 }
 
 func TestSetCursor(t *testing.T) {
-	testCommandRR(t, func() (RawResponse, error) {
+	testCommandR(t, func() (Response, error) {
 		return c.SetCursor("Adwaita", 32)
 	})
 }
