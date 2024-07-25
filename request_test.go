@@ -164,32 +164,35 @@ func TestParseResponse(t *testing.T) {
 	}
 }
 
+func BenchmarkParseResponse(b *testing.B) {
+	response := []byte(strings.Repeat("ok\r\n", 1000))
+
+	for i := 0; i < b.N; i++ {
+		parseResponse(response)
+	}
+}
+
 func TestValidateResponse(t *testing.T) {
 	tests := []struct {
-		validate bool
 		params   []string
 		response []Response
 		want     []Response
 		wantErr  bool
 	}{
 		// empty response should error
-		{true, genParams("param", 1), []Response{}, []Response{""}, true},
+		{genParams("param", 1), []Response{}, []Response{""}, true},
 		// happy path
-		{true, genParams("param", 1), []Response{"ok"}, []Response{"ok"}, false},
+		{genParams("param", 1), []Response{"ok"}, []Response{"ok"}, false},
 		// happy path
-		{true, genParams("param", 2), []Response{"ok", "ok"}, []Response{"ok", "ok"}, false},
+		{genParams("param", 2), []Response{"ok", "ok"}, []Response{"ok", "ok"}, false},
 		// missing response
-		{true, genParams("param", 2), []Response{"ok"}, []Response{"ok"}, true},
-		// disable validation
-		{false, genParams("param", 2), []Response{"ok"}, []Response{"ok"}, false},
+		{genParams("param", 2), []Response{"ok"}, []Response{"ok"}, true},
 		// non-ok response
-		{true, genParams("param", 2), []Response{"ok", "Invalid command"}, []Response{"ok", "Invalid command"}, true},
-		// disable validation
-		{false, genParams("param", 2), []Response{"ok", "Invalid command"}, []Response{"ok", "Invalid command"}, false},
+		{genParams("param", 2), []Response{"ok", "Invalid command"}, []Response{"ok", "Invalid command"}, true},
 	}
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("tests_%v-%v-%v", tt.validate, tt.params, tt.response), func(t *testing.T) {
-			response, err := validateResponse(tt.validate, tt.params, tt.response)
+		t.Run(fmt.Sprintf("tests_%v-%v", tt.params, tt.response), func(t *testing.T) {
+			response, err := validateResponse(tt.params, tt.response)
 			assert.DeepEqual(t, response, tt.want)
 			if tt.wantErr {
 				assert.Error(t, err)

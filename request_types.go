@@ -15,11 +15,8 @@ type RawResponse []byte
 type Response string
 
 // RequestClient is the main struct from hyprland-go.
-// You may want to set 'Validate' as false to avoid (possibly costly)
-// validations, at the expense of not reporting some errors in the IPC.
 type RequestClient struct {
-	Validate bool
-	conn     *net.UnixAddr
+	conn *net.UnixAddr
 }
 
 // Unmarshal structs for requests.

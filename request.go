@@ -134,14 +134,10 @@ func parseResponse(raw RawResponse) (response []Response, err error) {
 	return response, nil
 }
 
-func validateResponse(validate bool, params []string, response []Response) ([]Response, error) {
+func validateResponse(params []string, response []Response) ([]Response, error) {
 	// Empty response, something went terrible wrong
 	if len(response) == 0 {
 		return []Response{""}, errors.New("empty response")
-	}
-
-	if !validate {
-		return response, nil
 	}
 
 	want := len(params)
@@ -169,12 +165,12 @@ func validateResponse(validate bool, params []string, response []Response) ([]Re
 	return response, nil
 }
 
-func parseAndValidateResponse(validate bool, params []string, raw RawResponse) ([]Response, error) {
+func parseAndValidateResponse(params []string, raw RawResponse) ([]Response, error) {
 	response, err := parseResponse(raw)
 	if err != nil {
 		return response, err
 	}
-	return validateResponse(validate, params, response)
+	return validateResponse(params, response)
 }
 
 func unmarshalResponse(response RawResponse, v any) (err error) {
@@ -237,7 +233,6 @@ func MustClient() *RequestClient {
 // '$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket.sock'.
 func NewClient(socket string) *RequestClient {
 	return &RequestClient{
-		Validate: true,
 		conn: &net.UnixAddr{
 			Net:  "unix",
 			Name: socket,
@@ -402,13 +397,13 @@ func (c *RequestClient) Devices() (d Devices, err error) {
 // Accept multiple commands at the same time, in this case it will use batch
 // mode, similar to 'hyprctl dispatch --batch'.
 // Returns a [Response] list for each parameter, that may be useful for further
-// validations, especially when [RequestClient] 'Validation' is set to false.
+// validations.
 func (c *RequestClient) Dispatch(params ...string) (r []Response, err error) {
 	raw, err := c.doRequest("dispatch", params...)
 	if err != nil {
 		return nil, err
 	}
-	return parseAndValidateResponse(c.Validate, params, raw)
+	return parseAndValidateResponse(params, raw)
 }
 
 // Get option command, similar to 'hyprctl getoption'.
@@ -425,26 +420,25 @@ func (c *RequestClient) GetOption(name string) (o Option, err error) {
 // Accept multiple commands at the same time, in this case it will use batch
 // mode, similar to 'hyprctl keyword --batch'.
 // Returns a [Response] list for each parameter, that may be useful for further
-// validations, especially when [RequestClient] 'Validation' is set to false.
+// validations.
 func (c *RequestClient) Keyword(params ...string) (r []Response, err error) {
 	raw, err := c.doRequest("keyword", params...)
 	if err != nil {
 		return nil, err
 	}
-	return parseAndValidateResponse(c.Validate, params, raw)
+	return parseAndValidateResponse(params, raw)
 }
 
 // Kill command, similar to 'hyprctl kill'.
 // Kill an app by clicking on it, can exit with ESCAPE. Will NOT wait until the
 // user to click in the window.
-// Returns a [Response], that may be useful for further validations, especially
-// when [RequestClient] 'Validation' is set to false.
+// Returns a [Response], that may be useful for further validations.
 func (c *RequestClient) Kill() (r Response, err error) {
 	raw, err := c.doRequest("kill")
 	if err != nil {
 		return "", err
 	}
-	response, err := parseAndValidateResponse(c.Validate, nil, raw)
+	response, err := parseAndValidateResponse(nil, raw)
 	return response[0], err // should return only one response
 }
 
@@ -469,26 +463,24 @@ func (c *RequestClient) Monitors() (m []Monitor, err error) {
 }
 
 // Reload command, similar to 'hyprctl reload'.
-// Returns a [Response], that may be useful for further validations, especially
-// when [RequestClient] 'Validation' is set to false.
+// Returns a [Response], that may be useful for further validations.
 func (c *RequestClient) Reload() (r Response, err error) {
 	raw, err := c.doRequest("reload")
 	if err != nil {
 		return "", err
 	}
-	response, err := parseAndValidateResponse(c.Validate, nil, raw)
+	response, err := parseAndValidateResponse(nil, raw)
 	return response[0], err // should return only one response
 }
 
 // Set cursor command, similar to 'hyprctl setcursor'.
-// Returns a [Response] object, that may be useful for further validations,
-// especially when [RequestClient] 'Validation' is set to false.
+// Returns a [Response], that may be useful for further validations
 func (c *RequestClient) SetCursor(theme string, size int) (r Response, err error) {
 	raw, err := c.doRequest("setcursor", fmt.Sprintf("%s %d", theme, size))
 	if err != nil {
 		return "", err
 	}
-	response, err := parseAndValidateResponse(c.Validate, nil, raw)
+	response, err := parseAndValidateResponse(nil, raw)
 	return response[0], err // should return only one response
 }
 
