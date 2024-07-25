@@ -1,5 +1,6 @@
 # hyprland-go
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/thiagokokada/hyprland-go.svg)](https://pkg.go.dev/github.com/thiagokokada/hyprland-go)
 [![Go](https://github.com/thiagokokada/hyprland-go/actions/workflows/go.yml/badge.svg)](https://github.com/thiagokokada/hyprland-go/actions/workflows/go.yml)
 [![Test](https://github.com/thiagokokada/hyprland-go/actions/workflows/nix.yaml/badge.svg)](https://github.com/thiagokokada/hyprland-go/actions/workflows/nix.yaml)
 [![Hyprland](https://img.shields.io/badge/Hyprland-0.41.2-blue)](https://github.com/hyprwm/Hyprland)
