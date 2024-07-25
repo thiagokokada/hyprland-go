@@ -137,7 +137,7 @@ func parseResponse(raw RawResponse) (response []Response, err error) {
 func validateResponse(params []string, response []Response) ([]Response, error) {
 	// Empty response, something went terrible wrong
 	if len(response) == 0 {
-		return []Response{""}, errors.New("empty response")
+		return []Response{""}, ValidationError("empty response")
 	}
 
 	want := len(params)
@@ -147,18 +147,22 @@ func validateResponse(params []string, response []Response) ([]Response, error) 
 	}
 	// we have a different number of requests and responses
 	if want != len(response) {
-		return response, fmt.Errorf(
+		return response, ValidationError(fmt.Sprintf(
 			"want responses: %d, got: %d, responses: %v",
 			want,
 			len(response),
 			response,
-		)
+		))
 	}
 
 	// validate that all responses are ok
 	for i, r := range response {
 		if r != "ok" {
-			return response, fmt.Errorf("non-ok response from param: %s, response: %s", params[i], r)
+			return response, ValidationError(fmt.Sprintf(
+				"non-ok response from param: %s, response: %s",
+				params[i],
+				r,
+			))
 		}
 	}
 

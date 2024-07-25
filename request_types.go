@@ -19,6 +19,15 @@ type RequestClient struct {
 	conn *net.UnixAddr
 }
 
+// ValidationError is used to return errors from response validation. In some
+// cases you may want to ignore those errors, in this case you type check this
+// kind of error and ignore it.
+type ValidationError string
+
+func (v ValidationError) Error() string {
+	return string(v)
+}
+
 // Unmarshal structs for requests.
 // Try to keep struct fields in the same order as the output for `hyprctl -j`
 // for sanity.
