@@ -17,7 +17,9 @@ import (
 )
 
 const (
-	batch   = "[[BATCH]]"
+	// https://github.com/hyprwm/Hyprland/blob/918d8340afd652b011b937d29d5eea0be08467f5/hyprctl/main.cpp#L278
+	batch = "[[BATCH]]"
+	// https://github.com/hyprwm/Hyprland/blob/918d8340afd652b011b937d29d5eea0be08467f5/hyprctl/main.cpp#L257
 	bufSize = 8192
 )
 
