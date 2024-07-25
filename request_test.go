@@ -201,6 +201,8 @@ func TestValidateResponse(t *testing.T) {
 			assert.DeepEqual(t, response, tt.want)
 			if tt.wantErr {
 				assert.Error(t, err)
+				_, ok := err.(ValidationError)
+				assert.True(t, ok)
 			} else {
 				assert.NoError(t, err)
 			}
