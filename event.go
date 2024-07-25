@@ -8,7 +8,7 @@ import (
 	"github.com/thiagokokada/hyprland-go/internal/assert"
 )
 
-const SEPARATOR = ">>"
+const sep = ">>"
 
 // Initiate a new client or panic.
 // This should be the preferred method for user scripts, since it will
@@ -37,7 +37,7 @@ func NewEventClient(socket string) (*EventClient, error) {
 // alternative.
 // Experimental: WIP
 func (c *EventClient) Receive() ([]ReceivedData, error) {
-	buf := make([]byte, BUF_SIZE)
+	buf := make([]byte, bufSize)
 	n, err := c.conn.Read(buf)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (c *EventClient) Receive() ([]ReceivedData, error) {
 			continue
 		}
 
-		split := strings.Split(event, SEPARATOR)
+		split := strings.Split(event, sep)
 		if split[0] == "" || split[1] == "" || split[1] == "," {
 			continue
 		}

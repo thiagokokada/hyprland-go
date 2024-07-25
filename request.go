@@ -16,7 +16,12 @@ import (
 	"github.com/thiagokokada/hyprland-go/internal/assert"
 )
 
-const BUF_SIZE = 8192
+const (
+	batch   = "[[BATCH]]"
+	bufSize = 8192
+)
+
+var reqHeader = []byte{'j', '/'}
 
 func prepareRequest(buf *bytes.Buffer, command string, param string) int {
 	buf.WriteString(command)
@@ -36,11 +41,11 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 	switch len(params) {
 	case 0:
 		// +2 because of the 'j/'
-		if len(command)+2 > BUF_SIZE {
+		if len(command)+2 > bufSize {
 			return nil, fmt.Errorf(
 				"command is too long (%d>=%d): %s",
 				len(command),
-				BUF_SIZE,
+				bufSize,
 				command,
 			)
 		}
@@ -48,11 +53,11 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 	case 1:
 		request := command + " " + params[0]
 		// +2 because of the 'j/'
-		if len(request)+2 > BUF_SIZE {
+		if len(request)+2 > bufSize {
 			return nil, fmt.Errorf(
 				"command is too long (%d>=%d): %s",
 				len(request),
-				BUF_SIZE,
+				bufSize,
 				request,
 			)
 		}
@@ -60,7 +65,6 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 	default:
 		buf := bytes.NewBuffer(nil)
 
-		const batch = "[[BATCH]]"
 		// Add [[BATCH]] to the buffer
 		buf.WriteString(batch)
 		// Initialise current length of buffer
@@ -70,21 +74,21 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 			// Get the current command + param length
 			// +4 because of the 'j/; '
 			cmdLen := len(command) + len(param) + 4
-			if len(batch)+cmdLen > BUF_SIZE {
+			if len(batch)+cmdLen > bufSize {
 				// If batch + command length is bigger than
-				// BUF_SIZE, return an error since it will not
+				// bufSize, return an error since it will not
 				// fit the socket
 				return nil, fmt.Errorf(
 					"command is too long (%d>=%d): %s%s %s;",
 					len(batch)+cmdLen,
-					BUF_SIZE,
+					bufSize,
 					batch,
 					command,
 					param,
 				)
-			} else if curLen+cmdLen <= BUF_SIZE {
+			} else if curLen+cmdLen <= bufSize {
 				// If the current length of the buffer +
-				// command + param is less than BUF_SIZE, the
+				// command + param is less than bufSize, the
 				// request will fit
 				curLen = prepareRequest(buf, command, param)
 			} else {
@@ -232,12 +236,12 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 	}
 
 	// Send the request to the socket
-	request = append([]byte{'j', '/'}, request...)
-	if len(request) > BUF_SIZE {
+	request = append(reqHeader, request...)
+	if len(request) > bufSize {
 		return nil, fmt.Errorf(
 			"request too big (%d>%d): %s",
 			len(request),
-			BUF_SIZE,
+			bufSize,
 			request,
 		)
 	}
@@ -251,7 +255,7 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 
 	// Get the response back
 	rbuf := bytes.NewBuffer(nil)
-	sbuf := make([]byte, BUF_SIZE)
+	sbuf := make([]byte, bufSize)
 	reader := bufio.NewReader(conn)
 	for {
 		n, err := reader.Read(sbuf)
@@ -259,11 +263,11 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 			if err == io.EOF {
 				break
 			}
-			return nil, err
+			return nil, fmt.Errorf("error while reading from socket: %w", err)
 		}
 
 		rbuf.Write(sbuf[:n])
-		if n < BUF_SIZE {
+		if n < bufSize {
 			break
 		}
 	}
