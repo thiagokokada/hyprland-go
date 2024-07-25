@@ -325,6 +325,15 @@ func TestSplash(t *testing.T) {
 	testCommand(t, c.Splash, "")
 }
 
+func BenchmarkSplash(b *testing.B) {
+	if c == nil {
+		b.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+	for i := 0; i < b.N; i++ {
+		c.Splash()
+	}
+}
+
 func TestWorkspaces(t *testing.T) {
 	testCommand(t, c.Workspaces, []Workspace{})
 }

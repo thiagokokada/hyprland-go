@@ -1,6 +1,7 @@
 package hyprland
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -240,16 +241,20 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 			request,
 		)
 	}
-	_, err = conn.Write(request)
+
+	writer := bufio.NewWriter(conn)
+	_, err = writer.Write(request)
 	if err != nil {
 		return nil, fmt.Errorf("error while writing to socket: %w", err)
 	}
+	writer.Flush()
 
 	// Get the response back
 	rbuf := bytes.NewBuffer(nil)
 	sbuf := make([]byte, BUF_SIZE)
+	reader := bufio.NewReader(conn)
 	for {
-		n, err := conn.Read(sbuf)
+		n, err := reader.Read(sbuf)
 		if err != nil {
 			if err == io.EOF {
 				break
