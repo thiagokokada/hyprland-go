@@ -1,6 +1,7 @@
 package hyprland
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -10,11 +11,10 @@ import (
 	"github.com/thiagokokada/hyprland-go/internal/assert"
 )
 
-var c *RequestClient
-
-type DummyClient struct {
-	RequestClient
-}
+var (
+	c      *RequestClient
+	reload = flag.Bool("reload", true, "reload configuration after tests end")
+)
 
 func genParams(param string, n int) (params []string) {
 	for i := 0; i < n; i++ {
@@ -52,7 +52,7 @@ func setup() {
 }
 
 func teardown() {
-	if c != nil {
+	if *reload && c != nil {
 		// Make sure that the Hyprland config is in a sane state
 		assert.Must1(c.Reload())
 	}
@@ -60,9 +60,11 @@ func teardown() {
 
 func TestMain(m *testing.M) {
 	setup()
-	defer teardown()
 
 	exitCode := m.Run()
+
+	teardown()
+
 	os.Exit(exitCode)
 }
 
@@ -314,7 +316,7 @@ func TestGetOption(t *testing.T) {
 
 func TestKeyword(t *testing.T) {
 	testCommandRs(t, func() ([]Response, error) {
-		return c.Keyword("general:border_size 1", "general:border_size 5")
+		return c.Keyword("bind SUPER,K,exec,kitty", "general:border_size 5")
 	})
 }
 
@@ -334,6 +336,9 @@ func TestMonitors(t *testing.T) {
 }
 
 func TestReload(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test that reload config")
+	}
 	testCommandR(t, c.Reload)
 }
 
