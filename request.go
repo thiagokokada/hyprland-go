@@ -124,25 +124,35 @@ func (c *RequestClient) validateResponse(params []string, response RawResponse) 
 		return errors.New("empty response")
 	}
 
-	var resp = string(response)
-	// Count the number of "ok" we got in response
-	got := strings.Count(resp, "ok")
+	reader := bufio.NewReader(bytes.NewReader(response))
+	scanner := bufio.NewScanner(reader)
+	scanner.Split(bufio.ScanLines)
+
+	i := 0
+	for ; scanner.Scan(); i++ {
+		resp := strings.TrimSpace(scanner.Text())
+		if resp == "" {
+			continue
+		}
+		if resp != "ok" {
+			if i >= len(params) {
+				return fmt.Errorf("non-ok response from unknown param: %s", response)
+			} else {
+				return fmt.Errorf("non-ok response from request: %d, param: %s, response: %s", i, params[i], resp)
+			}
+		}
+	}
+
 	want := len(params)
-	// Commands without parameters still have a "ok" response
 	if want == 0 {
+		// commands without parameters will have at least one return
 		want = 1
 	}
-	// If we had less than expected number of "ok" results, it means
-	// something went wrong
-	if got < want {
-		return fmt.Errorf(
-			"got ok: %d, want: %d, response: %s",
-			got,
-			want,
-			resp,
-		)
 
+	if i < want {
+		return fmt.Errorf("got ok: %d, want: %d", i, want)
 	}
+
 	return nil
 }
 

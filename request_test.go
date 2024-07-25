@@ -148,14 +148,15 @@ func TestValidateResponse(t *testing.T) {
 		validate  bool
 		expectErr bool
 	}{
-		{genParams("param", 1), RawResponse("   ok   "), true, false},
+		{genParams("param", 1), RawResponse("ok"), true, false},
+		{genParams("param", 2), RawResponse("ok\r\nInvalid response"), false, false},
 		{genParams("param", 2), RawResponse("ok"), true, true},
 		{genParams("param", 2), RawResponse("ok"), false, false},
-		{genParams("param", 1), RawResponse("ok ok"), true, false}, // not sure about this case, will leave like this for now
-		{genParams("param", 5), RawResponse(strings.Repeat("ok", 5)), true, false},
-		{genParams("param", 6), RawResponse(strings.Repeat("ok", 5)), true, true},
-		{genParams("param", 6), RawResponse(strings.Repeat("ok", 5)), false, false},
-		{genParams("param", 10), RawResponse(strings.Repeat(" ok ", 10)), true, false},
+		{genParams("param", 1), RawResponse("ok\r\nok"), true, false}, // not sure about this case, will leave like this for now
+		{genParams("param", 5), RawResponse(strings.Repeat("ok\r\n", 5)), true, false},
+		{genParams("param", 6), RawResponse(strings.Repeat("ok\r\n", 5)), true, true},
+		{genParams("param", 6), RawResponse(strings.Repeat("ok\r\n\r\n", 5)), false, false},
+		{genParams("param", 10), RawResponse(strings.Repeat("ok\r\n\n", 10)), true, false},
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("tests_%v-%v", tt.params, tt.response), func(t *testing.T) {
@@ -173,8 +174,8 @@ func TestValidateResponse(t *testing.T) {
 func BenchmarkValidateResponse(b *testing.B) {
 	// Dummy client to allow this test to run without Hyprland
 	c := DummyClient{}
-	params := genParams("param", 10000)
-	response := strings.Repeat("ok"+strings.Repeat(" ", 1000), 10000)
+	params := genParams("param", 1000)
+	response := strings.Repeat("ok"+strings.Repeat(" ", 1000), 1000)
 
 	for i := 0; i < b.N; i++ {
 		c.validateResponse(params, RawResponse(response))
