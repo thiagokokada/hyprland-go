@@ -154,9 +154,14 @@
           default = hyprland-go;
           hyprland-go = pkgs.buildGoModule {
             pname = "hyprland-go";
-            version = "0.0.0";
+            version = "0.0.1";
 
             src = ./.;
+
+            subPackages = [
+              "examples/hyprctl"
+              "examples/hyprtabs"
+            ];
 
             vendorHash = null;
           };
