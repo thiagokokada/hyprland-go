@@ -16,6 +16,34 @@ go get -u github.com/thiagokokada/hyprland-go
 Look at the [`examples`](./examples) directory for examples on how to use the
 library.
 
+## Why?
+
+- Go: it is a good language to prototype scripts thanks to `go run`, have low
+  startup times after compilation and allow creation of static binaries that
+  can be run anywhere (e.g.: you can commit the binary to your dotfiles, so you
+  don't need to have a working Go compiler!)
+- Good developer experience: the API tries to support the most common use cases
+  easily while also supporting low-level usage if necessary. Also includes
+  proper error handling to make it easier to investigate issues
+- Performance: uses tricks like `bufio` and `bytes.Buffer` to archieve high
+  performance:
+  ```console
+  # see examples/hyprtabs
+  $ hyperfine -N ./hyprtabs # 1 window in workspace
+  Benchmark 1: ./hyprtabs
+    Time (mean ± σ):       5.5 ms ±   2.0 ms    [User: 0.8 ms, System: 3.0 ms]
+    Range (min … max):     2.2 ms …  11.8 ms    443 runs
+  $ hyperfine -N ./hyprtabs # 10 windows in workspace, 122 commands to IPC!
+    Benchmark 1: ./hyprtabs
+      Time (mean ± σ):      12.0 ms ±   4.7 ms    [User: 0.9 ms, System: 3.4 ms]
+      Range (min … max):     4.4 ms …  20.0 ms    490 runs
+  $ hyperfine -N ./hyprtabs # 20 windows in workspace, 242 commands to IPC!!
+    Benchmark 1: ./hyprtabs
+      Time (mean ± σ):      24.0 ms ±  10.9 ms    [User: 0.9 ms, System: 3.3 ms]
+      Range (min … max):     9.0 ms …  44.4 ms    77 runs
+  ```
+- Zero dependencies: smaller binary sizes
+
 ## What is supported?
 
 - [Dispatchers:](https://wiki.hyprland.org/Configuring/Dispatchers/) for
