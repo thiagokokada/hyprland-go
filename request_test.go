@@ -59,10 +59,10 @@ func teardown() {
 }
 
 func TestMain(m *testing.M) {
+	flag.Parse()
+
 	setup()
-
 	exitCode := m.Run()
-
 	teardown()
 
 	os.Exit(exitCode)
@@ -148,8 +148,9 @@ func TestParseResponse(t *testing.T) {
 		want     int
 	}{
 		{RawResponse("ok"), 1},
-		{RawResponse("ok\r\nok"), 2},
 		{RawResponse("   ok  "), 1},
+		{RawResponse("ok\r\nok"), 2},
+		{RawResponse(" \r\nok\r\n \r\n ok"), 2},
 		{RawResponse(strings.Repeat("ok\r\n", 5)), 5},
 		{RawResponse(strings.Repeat("ok\r\n\r\n", 5)), 5},
 		{RawResponse(strings.Repeat("ok\r\n\n", 10)), 10},
