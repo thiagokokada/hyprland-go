@@ -70,16 +70,13 @@
                   services.getty.autologinUser = user;
 
                   virtualisation.qemu = {
-                    # package = lib.mkForce pkgs.qemu_full;
                     options = [
                       "-smp 2"
                       "-m 4G"
                       "-vga none"
                       "-device virtio-gpu-pci"
-                      # needs qemu_full:
-                      # "-device virtio-vga-gl"
-                      # "-display egl-headless,gl=core"
-                      # "-display gtk,gl=on"
+                      # Works only in Wayland, may be slightly faster
+                      # "-device virtio-gpu-rutabaga,gfxstream-vulkan=on,cross-domain=on,hostmem=2G"
                     ];
                   };
 
@@ -106,6 +103,16 @@
                           ''
                             bind = SUPER, Q, exec, kitty # Bind() test need at least one bind
                             exec-once = kitty sh -c ${testScript}
+                            animations {
+                              # slow, and nobody is looking anyway
+                              enabled = false
+                            }
+                            decoration {
+                              # slow, and nobody is looking anyway
+                              blur {
+                                enabled = false
+                              }
+                            }
                             cursor {
                               # improve cursor in VM
                               no_hardware_cursors = true
