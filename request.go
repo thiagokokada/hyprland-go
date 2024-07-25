@@ -173,16 +173,16 @@ func parseAndValidateResponse(params []string, raw RawResponse) ([]Response, err
 	return validateResponse(params, response)
 }
 
-func unmarshalResponse(response RawResponse, v any) (err error) {
+func unmarshalResponse[T any](response RawResponse, v *T) (T, error) {
 	if len(response) == 0 {
-		return errors.New("empty response")
+		return *v, errors.New("empty response")
 	}
 
-	err = json.Unmarshal(response, &v)
+	err := json.Unmarshal(response, &v)
 	if err != nil {
-		return fmt.Errorf("error during unmarshal: %w", err)
+		return *v, fmt.Errorf("error during unmarshal: %w", err)
 	}
-	return nil
+	return *v, nil
 }
 
 func (c *RequestClient) doRequest(command string, params ...string) (response RawResponse, err error) {
@@ -310,7 +310,7 @@ func (c *RequestClient) ActiveWindow() (w Window, err error) {
 	if err != nil {
 		return w, err
 	}
-	return w, unmarshalResponse(response, &w)
+	return unmarshalResponse(response, &w)
 }
 
 // Get option command, similar to 'hyprctl activeworkspace'.
@@ -320,7 +320,7 @@ func (c *RequestClient) ActiveWorkspace() (w Workspace, err error) {
 	if err != nil {
 		return w, err
 	}
-	return w, unmarshalResponse(response, &w)
+	return unmarshalResponse(response, &w)
 }
 
 // Animations command, similar to 'hyprctl animations'.
@@ -330,7 +330,7 @@ func (c *RequestClient) Animations() (a [][]Animation, err error) {
 	if err != nil {
 		return a, err
 	}
-	return a, unmarshalResponse(response, &a)
+	return unmarshalResponse(response, &a)
 }
 
 // Binds command, similar to 'hyprctl binds'.
@@ -340,7 +340,7 @@ func (c *RequestClient) Binds() (b []Bind, err error) {
 	if err != nil {
 		return b, err
 	}
-	return b, unmarshalResponse(response, &b)
+	return unmarshalResponse(response, &b)
 }
 
 // Clients command, similar to 'hyprctl clients'.
@@ -350,7 +350,7 @@ func (c *RequestClient) Clients() (cl []Client, err error) {
 	if err != nil {
 		return cl, err
 	}
-	return cl, unmarshalResponse(response, &cl)
+	return unmarshalResponse(response, &cl)
 }
 
 // ConfigErrors command, similar to `hyprctl configerrors`.
@@ -360,7 +360,7 @@ func (c *RequestClient) ConfigErrors() (ce []ConfigError, err error) {
 	if err != nil {
 		return ce, err
 	}
-	return ce, unmarshalResponse(response, &ce)
+	return unmarshalResponse(response, &ce)
 }
 
 // Cursor position command, similar to 'hyprctl cursorpos'.
@@ -370,7 +370,7 @@ func (c *RequestClient) CursorPos() (cu CursorPos, err error) {
 	if err != nil {
 		return cu, err
 	}
-	return cu, unmarshalResponse(response, &cu)
+	return unmarshalResponse(response, &cu)
 }
 
 // Decorations command, similar to `hyprctl decorations`.
@@ -380,7 +380,7 @@ func (c *RequestClient) Decorations(regex string) (d []Decoration, err error) {
 	if err != nil {
 		return d, err
 	}
-	return d, unmarshalResponse(response, &d)
+	return unmarshalResponse(response, &d)
 }
 
 // Devices command, similar to `hyprctl devices`.
@@ -390,7 +390,7 @@ func (c *RequestClient) Devices() (d Devices, err error) {
 	if err != nil {
 		return d, err
 	}
-	return d, unmarshalResponse(response, &d)
+	return unmarshalResponse(response, &d)
 }
 
 // Dispatch commands, similar to 'hyprctl dispatch'.
@@ -401,7 +401,7 @@ func (c *RequestClient) Devices() (d Devices, err error) {
 func (c *RequestClient) Dispatch(params ...string) (r []Response, err error) {
 	raw, err := c.doRequest("dispatch", params...)
 	if err != nil {
-		return nil, err
+		return r, err
 	}
 	return parseAndValidateResponse(params, raw)
 }
@@ -413,7 +413,7 @@ func (c *RequestClient) GetOption(name string) (o Option, err error) {
 	if err != nil {
 		return o, err
 	}
-	return o, unmarshalResponse(response, &o)
+	return unmarshalResponse(response, &o)
 }
 
 // Keyword command, similar to 'hyprctl keyword'.
@@ -424,7 +424,7 @@ func (c *RequestClient) GetOption(name string) (o Option, err error) {
 func (c *RequestClient) Keyword(params ...string) (r []Response, err error) {
 	raw, err := c.doRequest("keyword", params...)
 	if err != nil {
-		return nil, err
+		return r, err
 	}
 	return parseAndValidateResponse(params, raw)
 }
@@ -436,7 +436,7 @@ func (c *RequestClient) Keyword(params ...string) (r []Response, err error) {
 func (c *RequestClient) Kill() (r Response, err error) {
 	raw, err := c.doRequest("kill")
 	if err != nil {
-		return "", err
+		return r, err
 	}
 	response, err := parseAndValidateResponse(nil, raw)
 	return response[0], err // should return only one response
@@ -449,7 +449,7 @@ func (c *RequestClient) Layers() (l Layers, err error) {
 	if err != nil {
 		return l, err
 	}
-	return l, unmarshalResponse(response, &l)
+	return unmarshalResponse(response, &l)
 }
 
 // Monitors command, similar to 'hyprctl monitors'.
@@ -459,7 +459,7 @@ func (c *RequestClient) Monitors() (m []Monitor, err error) {
 	if err != nil {
 		return m, err
 	}
-	return m, unmarshalResponse(response, &m)
+	return unmarshalResponse(response, &m)
 }
 
 // Reload command, similar to 'hyprctl reload'.
@@ -467,7 +467,7 @@ func (c *RequestClient) Monitors() (m []Monitor, err error) {
 func (c *RequestClient) Reload() (r Response, err error) {
 	raw, err := c.doRequest("reload")
 	if err != nil {
-		return "", err
+		return r, err
 	}
 	response, err := parseAndValidateResponse(nil, raw)
 	return response[0], err // should return only one response
@@ -478,7 +478,7 @@ func (c *RequestClient) Reload() (r Response, err error) {
 func (c *RequestClient) SetCursor(theme string, size int) (r Response, err error) {
 	raw, err := c.doRequest("setcursor", fmt.Sprintf("%s %d", theme, size))
 	if err != nil {
-		return "", err
+		return r, err
 	}
 	response, err := parseAndValidateResponse(nil, raw)
 	return response[0], err // should return only one response
@@ -488,7 +488,7 @@ func (c *RequestClient) SetCursor(theme string, size int) (r Response, err error
 func (c *RequestClient) Splash() (s string, err error) {
 	response, err := c.doRequest("splash")
 	if err != nil {
-		return "", err
+		return s, err
 	}
 	return string(response), nil
 }
@@ -500,7 +500,7 @@ func (c *RequestClient) Version() (v Version, err error) {
 	if err != nil {
 		return v, err
 	}
-	return v, unmarshalResponse(response, &v)
+	return unmarshalResponse(response, &v)
 }
 
 // Workspaces option command, similar to 'hyprctl workspaces'.
@@ -510,5 +510,5 @@ func (c *RequestClient) Workspaces() (w []Workspace, err error) {
 	if err != nil {
 		return w, err
 	}
-	return w, unmarshalResponse(response, &w)
+	return unmarshalResponse(response, &w)
 }
