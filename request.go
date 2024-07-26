@@ -184,7 +184,11 @@ func unmarshalResponse[T any](response RawResponse, v *T) (T, error) {
 
 	err := json.Unmarshal(response, &v)
 	if err != nil {
-		return *v, fmt.Errorf("error during unmarshal: %w", err)
+		return *v, fmt.Errorf(
+			"error while unmarshal: %w, response: %s",
+			err,
+			response,
+		)
 	}
 	return *v, nil
 }
