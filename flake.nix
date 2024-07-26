@@ -39,7 +39,7 @@
               testFinished = "${home}/test-finished";
               testLog = "${home}/test.log";
             in
-            pkgs.nixosTest {
+            pkgs.testers.runNixOSTest {
               name = "hyprland-go";
 
               nodes.machine =
