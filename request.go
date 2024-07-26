@@ -184,7 +184,11 @@ func unmarshalResponse[T any](response RawResponse, v *T) (T, error) {
 
 	err := json.Unmarshal(response, &v)
 	if err != nil {
-		return *v, fmt.Errorf("error during unmarshal: %w", err)
+		return *v, fmt.Errorf(
+			"error while unmarshal: %w, response: %s",
+			err,
+			response,
+		)
 	}
 	return *v, nil
 }
@@ -478,9 +482,21 @@ func (c *RequestClient) Reload() (r Response, err error) {
 }
 
 // Set cursor command, similar to 'hyprctl setcursor'.
-// Returns a [Response], that may be useful for further validations
+// Returns a [Response], that may be useful for further validations.
 func (c *RequestClient) SetCursor(theme string, size int) (r Response, err error) {
 	raw, err := c.doRequest("setcursor", fmt.Sprintf("%s %d", theme, size))
+	if err != nil {
+		return r, err
+	}
+	response, err := parseAndValidateResponse(nil, raw)
+	return response[0], err // should return only one response
+}
+
+// Set cursor command, similar to 'hyprctl switchxkblayout'.
+// Returns a [Response], that may be useful for further validations.
+// Param cmd can be either 'next', 'prev' or an ID (e.g: 0).
+func (c *RequestClient) SwitchXkbLayout(device string, cmd string) (r Response, err error) {
+	raw, err := c.doRequest("switchxkblayout", fmt.Sprintf("%s %s", device, cmd))
 	if err != nil {
 		return r, err
 	}

@@ -353,6 +353,17 @@ func TestSetCursor(t *testing.T) {
 	})
 }
 
+func TestSwitchXkbLayout(t *testing.T) {
+	// Need to find a keyboard, call Devices()
+	checkEnvironment(t)
+	devices, err := c.Devices()
+	assert.NoError(t, err)
+
+	testCommandR(t, func() (Response, error) {
+		return c.SwitchXkbLayout(devices.Keyboards[0].Name, "next")
+	})
+}
+
 func TestSplash(t *testing.T) {
 	testCommand(t, c.Splash, "")
 }
