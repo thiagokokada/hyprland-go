@@ -34,15 +34,37 @@ library.
   Benchmark 1: ./hyprtabs
     Time (mean ± σ):       5.5 ms ±   2.0 ms    [User: 0.8 ms, System: 3.0 ms]
     Range (min … max):     2.2 ms …  11.8 ms    443 runs
+
   $ hyperfine -N ./hyprtabs # 10 windows in workspace, 122 commands to IPC!
     Benchmark 1: ./hyprtabs
       Time (mean ± σ):      12.0 ms ±   4.7 ms    [User: 0.9 ms, System: 3.4 ms]
       Range (min … max):     4.4 ms …  20.0 ms    490 runs
+
   $ hyperfine -N ./hyprtabs # 20 windows in workspace, 242 commands to IPC!!
     Benchmark 1: ./hyprtabs
       Time (mean ± σ):      24.0 ms ±  10.9 ms    [User: 0.9 ms, System: 3.3 ms]
       Range (min … max):     9.0 ms …  44.4 ms    77 runs
   ```
+  Compare the results above with the original
+  [`hyprtabs.sh`](https://gist.github.com/Atrate/b08c5b67172abafa5e7286f4a952ca4d):
+  <details>
+
+      $ hyperfine ./hyprtabs.sh # 1 window in workspace
+      Benchmark 1: ./hyprtabs.sh
+        Time (mean ± σ):     103.0 ms ±   8.1 ms    [User: 51.6 ms, System: 88.1 ms]
+        Range (min … max):    92.6 ms … 122.3 ms    30 runs
+
+      $ hyperfine ./hyprtabs.sh # 10 windows in workspace
+      Benchmark 1: ./hyprtabs.sh
+        Time (mean ± σ):     115.5 ms ±   9.6 ms    [User: 50.2 ms, System: 85.8 ms]
+        Range (min … max):    94.8 ms … 136.8 ms    28 runs
+
+      $ hyperfine ./hyprtabs.sh # 20 windows in workspace
+      Benchmark 1: ./hyprtabs.sh
+        Time (mean ± σ):     121.5 ms ±   5.8 ms    [User: 50.7 ms, System: 82.4 ms]
+        Range (min … max):   112.6 ms … 133.6 ms    23 runs
+
+  </details>
 - Zero dependencies: smaller binary sizes
 
 ## What is supported?
