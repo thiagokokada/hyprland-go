@@ -56,9 +56,11 @@ func usage(m map[string]func(args []string)) {
 	fmt.Fprintf(out, "Available subcommands:\n")
 
 	// Sort keys before printing, since Go randomises order
-	subcommands := make([]string, 0, len(m))
+	subcommands := make([]string, len(m))
+	i := 0
 	for s := range m {
-		subcommands = append(subcommands, s)
+		subcommands[i] = s
+		i++
 	}
 	sort.Strings(subcommands)
 	for _, s := range subcommands {
