@@ -3,7 +3,7 @@ package hyprland
 import "net"
 
 // Indicates the version where the structs are up-to-date.
-const HYPRLAND_VERSION = "0.41.2"
+const HYPRLAND_VERSION = "0.42"
 
 // Represents a raw request that is passed for Hyprland's socket.
 type RawRequest []byte
