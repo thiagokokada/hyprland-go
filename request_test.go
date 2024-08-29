@@ -241,6 +241,11 @@ func TestConfigErrors(t *testing.T) {
 }
 
 func TestCursorPos(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		// https://github.com/NixOS/nixpkgs/issues/156067
+		// https://github.com/hyprwm/Hyprland/discussions/1257
+		t.Skip("skip test that always returns CursorPos{X:0, Y:0} in CI since we can't move cursor")
+	}
 	testCommand(t, c.CursorPos, CursorPos{})
 }
 
