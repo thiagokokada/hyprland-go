@@ -24,12 +24,13 @@ const (
 )
 
 var reqHeader = []byte{'j', '/'}
+var reqSep = []byte{' ', ';'}
 
 func prepareRequest(buf *bytes.Buffer, command string, param string) int {
 	buf.WriteString(command)
-	buf.WriteString(" ")
+	buf.WriteByte(reqSep[0])
 	buf.WriteString(param)
-	buf.WriteString(";")
+	buf.WriteByte(reqSep[1])
 
 	return buf.Len()
 }
@@ -42,8 +43,7 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 	}
 	switch len(params) {
 	case 0:
-		// +2 because of the 'j/'
-		if len(command)+2 > bufSize {
+		if len(command)+len(reqHeader) > bufSize {
 			return nil, fmt.Errorf(
 				"command is too long (%d>=%d): %s",
 				len(command),
@@ -54,8 +54,7 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 		requests = append(requests, []byte(command))
 	case 1:
 		request := command + " " + params[0]
-		// +2 because of the 'j/'
-		if len(request)+2 > bufSize {
+		if len(request)+len(reqHeader) > bufSize {
 			return nil, fmt.Errorf(
 				"command is too long (%d>=%d): %s",
 				len(request),
@@ -73,13 +72,13 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 		curLen := buf.Len()
 
 		for _, param := range params {
-			// Get the current command + param length
-			// +4 because of the 'j/; '
-			cmdLen := len(command) + len(param) + 4
+			// Get the current command + param length + request
+			// header and separators
+			cmdLen := len(command) + len(param) + len(reqHeader) + len(reqSep)
+
+			// If batch + command length is bigger than bufSize,
+			// return an error since it will not fit the socket
 			if len(batch)+cmdLen > bufSize {
-				// If batch + command length is bigger than
-				// bufSize, return an error since it will not
-				// fit the socket
 				return nil, fmt.Errorf(
 					"command is too long (%d>=%d): %s%s %s;",
 					len(batch)+cmdLen,
@@ -88,25 +87,22 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 					command,
 					param,
 				)
-			} else if curLen+cmdLen <= bufSize {
-				// If the current length of the buffer +
-				// command + param is less than bufSize, the
-				// request will fit
-				curLen = prepareRequest(buf, command, param)
-			} else {
-				// If not, we will need to split the request,
-				// so append current buffer contents to the
+			}
+
+			// If the current length of the buffer + command +
+			// param is bigger than bufSize, we will need to split
+			// the request
+			if curLen+cmdLen > bufSize {
+				// Append current buffer contents to the
 				// requests array
 				requests = append(requests, buf.Bytes())
 
 				// Reset the current buffer and add [[BATCH]]
 				buf.Reset()
 				buf.WriteString(batch)
-
-				// And finally, add the contents of the request
-				// to the buffer
-				curLen = prepareRequest(buf, command, param)
 			}
+			// Add the contents of the request to the buffer
+			curLen = prepareRequest(buf, command, param)
 		}
 		// Append any remaining buffer content to requests array
 		requests = append(requests, buf.Bytes())
