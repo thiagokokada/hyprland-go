@@ -7,6 +7,11 @@ type EventClient struct {
 	conn net.Conn
 }
 
+// Event Client interface, right now only used for testing.
+type eventClient interface {
+	Receive() ([]ReceivedData, error)
+}
+
 type RawData string
 
 type EventType string
