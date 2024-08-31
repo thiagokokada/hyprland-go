@@ -8,7 +8,7 @@ type DefaultEventHandler struct{}
 func (e *DefaultEventHandler) Workspace(WorkspaceName)        {}
 func (e *DefaultEventHandler) FocusedMonitor(FocusedMonitor)  {}
 func (e *DefaultEventHandler) ActiveWindow(ActiveWindow)      {}
-func (e *DefaultEventHandler) Fullscreen(bool)                {}
+func (e *DefaultEventHandler) Fullscreen(Fullscreen)          {}
 func (e *DefaultEventHandler) MonitorRemoved(MonitorName)     {}
 func (e *DefaultEventHandler) MonitorAdded(MonitorName)       {}
 func (e *DefaultEventHandler) CreateWorkspace(WorkspaceName)  {}

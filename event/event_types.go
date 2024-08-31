@@ -29,7 +29,7 @@ type EventHandler interface {
 	// ActiveWindow emitted on the active window being changed.
 	ActiveWindow(w ActiveWindow)
 	// Fullscreen emitted when a fullscreen status of a window changes.
-	Fullscreen(f bool)
+	Fullscreen(f Fullscreen)
 	// MonitorRemoved emitted when a monitor is removed (disconnected).
 	MonitorRemoved(m MonitorName)
 	// MonitorAdded emitted when a monitor is added (connected).
@@ -108,6 +108,8 @@ type MoveWorkspace struct {
 	WorkspaceName
 	MonitorName
 }
+
+type Fullscreen bool
 
 type MonitorName string
 
