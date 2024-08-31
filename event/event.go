@@ -1,6 +1,7 @@
 package event
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"strings"
@@ -39,7 +40,8 @@ func NewEventClient(socket string) (*EventClient, error) {
 // alternative.
 func (c *EventClient) Receive() ([]ReceivedData, error) {
 	buf := make([]byte, bufSize)
-	n, err := c.conn.Read(buf)
+	reader := bufio.NewReader(c.conn)
+	n, err := reader.Read(buf)
 	if err != nil {
 		return nil, err
 	}
