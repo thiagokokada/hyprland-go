@@ -20,15 +20,15 @@ const (
 // automatically find the proper socket to connect and use the
 // HYPRLAND_INSTANCE_SIGNATURE for the current user.
 // If you need to connect to arbitrary user instances or need a method that
-// will not panic on error, use [NewEventClient] instead.
-func MustEventClient() *EventClient {
-	return assert.Must1(NewEventClient(helpers.MustSocket(".socket2.sock")))
+// will not panic on error, use [NewClient] instead.
+func MustClient() *EventClient {
+	return assert.Must1(NewClient(helpers.MustSocket(".socket2.sock")))
 }
 
 // Initiate a new event client.
 // Receive as parameters a socket that is generally localised in
 // '$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock'.
-func NewEventClient(socket string) (*EventClient, error) {
+func NewClient(socket string) (*EventClient, error) {
 	conn, err := net.Dial("unix", socket)
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to socket: %w", err)

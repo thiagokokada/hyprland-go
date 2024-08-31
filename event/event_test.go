@@ -31,7 +31,8 @@ func TestReceive(t *testing.T) {
 	}()
 
 	// We must capture this event
-	c := MustEventClient()
+	c := MustClient()
+	defer c.Close()
 	data, err := c.Receive()
 
 	assert.NoError(t, err)
