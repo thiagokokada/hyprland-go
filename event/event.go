@@ -6,9 +6,13 @@ import (
 	"strings"
 
 	"github.com/thiagokokada/hyprland-go/internal/assert"
+	"github.com/thiagokokada/hyprland-go/internal/helpers"
 )
 
-const sep = ">>"
+const (
+	bufSize = 8192
+	sep     = ">>"
+)
 
 // Initiate a new client or panic.
 // This should be the preferred method for user scripts, since it will
@@ -18,7 +22,7 @@ const sep = ">>"
 // will not panic on error, use [NewEventClient] instead.
 // Experimental: WIP
 func MustEventClient() *EventClient {
-	return assert.Must1(NewEventClient(mustSocket(".socket2.sock")))
+	return assert.Must1(NewEventClient(helpers.MustSocket(".socket2.sock")))
 }
 
 // Initiate a new event client.
