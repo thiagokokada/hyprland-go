@@ -4,8 +4,6 @@ import (
 	"testing"
 )
 
-var ec *EventClient
-
 var (
 	h = &FakeEventHandler{}
 	c = &FakeEventClient{}
