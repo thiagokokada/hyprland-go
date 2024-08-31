@@ -14,7 +14,7 @@ type FakeEventClient struct {
 }
 
 type FakeEventHandler struct {
-	NoopEventHandler
+	DefaultEventHandler
 }
 
 func (f *FakeEventClient) Receive() ([]ReceivedData, error) {
@@ -97,7 +97,7 @@ func (f *FakeEventClient) Receive() ([]ReceivedData, error) {
 }
 
 func TestSubscribe(t *testing.T) {
-	err := SubscribeWithoutLoop(*c, h, GetAllEvents()...)
+	err := SubscribeWithoutLoop(*c, h, AllEvents...)
 	if err != nil {
 		t.Error(err)
 	}

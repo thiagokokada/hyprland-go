@@ -80,26 +80,28 @@ const (
 	EventScreencast       EventType = "screencast"
 )
 
-func GetAllEvents() []EventType {
-	return []EventType{
-		EventWorkspace,
-		EventFocusedMonitor,
-		EventActiveWindow,
-		EventFullscreen,
-		EventMonitorRemoved,
-		EventMonitorAdded,
-		EventCreateWorkspace,
-		EventDestroyWorkspace,
-		EventMoveWorkspace,
-		EventActiveLayout,
-		EventOpenWindow,
-		EventCloseWindow,
-		EventMoveWindow,
-		EventOpenLayer,
-		EventCloseLayer,
-		EventSubMap,
-		EventScreencast,
-	}
+// AllEvents is the combination of all event types, useful if you want to
+// subscribe to all supported events at the same time.
+// Keep in mind that generally explicit declaring which events you want to
+// subscribe is better, since new events will be added in future.
+var AllEvents = []EventType{
+	EventWorkspace,
+	EventFocusedMonitor,
+	EventActiveWindow,
+	EventFullscreen,
+	EventMonitorRemoved,
+	EventMonitorAdded,
+	EventCreateWorkspace,
+	EventDestroyWorkspace,
+	EventMoveWorkspace,
+	EventActiveLayout,
+	EventOpenWindow,
+	EventCloseWindow,
+	EventMoveWindow,
+	EventOpenLayer,
+	EventCloseLayer,
+	EventSubMap,
+	EventScreencast,
 }
 
 type MoveWorkspace struct {
