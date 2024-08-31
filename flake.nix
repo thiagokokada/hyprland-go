@@ -95,7 +95,7 @@
                             glxinfo -B > ${glxinfoOut} || true
                             cd ${./.}
 
-                            export CI=1
+                            export NIX_CI=1
                             go test -bench=. -coverprofile ${covOut} -v ./... > ${testLog} 2>&1
                             go tool cover -html=${covOut} -o ${covHtml}
                           '';

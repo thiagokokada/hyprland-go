@@ -241,7 +241,7 @@ func TestConfigErrors(t *testing.T) {
 }
 
 func TestCursorPos(t *testing.T) {
-	if os.Getenv("CI") != "" {
+	if os.Getenv("NIX_CI") != "" {
 		// https://github.com/NixOS/nixpkgs/issues/156067
 		// https://github.com/hyprwm/Hyprland/discussions/1257
 		t.Skip("skip test that always returns CursorPos{X:0, Y:0} in CI since we can't move cursor")
@@ -388,4 +388,11 @@ func TestWorkspaces(t *testing.T) {
 
 func TestVersion(t *testing.T) {
 	testCommand(t, c.Version, Version{})
+
+	if os.Getenv("NIX_CI") != "" {
+		// make sure that we are running the same version of Hyprland
+		// in NixOS VM test that we are declaring as compatible
+		v, _ := c.Version()
+		assert.Equal(t, v.Tag, "v"+HYPRLAND_VERSION)
+	}
 }
