@@ -27,7 +27,7 @@ func TestReceive(t *testing.T) {
 	go func() {
 		c := hyprland.MustClient()
 		time.Sleep(100 * time.Millisecond)
-		c.Dispatch("exec kitty")
+		c.Dispatch("exec kitty sh -c 'echo Testing hyprland-go events && sleep 1'")
 	}()
 
 	// We must capture this event
