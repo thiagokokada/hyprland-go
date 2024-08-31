@@ -20,7 +20,9 @@ func (e *ev) ActiveWindow(w event.ActiveWindow) {
 }
 
 func main() {
-	c := event.MustEventClient()
+	c := event.MustClient()
+	defer c.Close()
+
 	event.Subscribe(
 		c, &ev{},
 		event.EventWorkspace,
