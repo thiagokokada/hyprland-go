@@ -84,10 +84,9 @@ library.
   for general usage, sending commands directly to the IPC socket of Hyprland is
   supported for i.e.: performance, e.g.: `c.RawRequest("[[BATCH]] dispatch exec
   kitty, keyword general:border_size 1")`
-
-## Planned
-
-- [Events](https://wiki.hyprland.org/Plugins/Development/Event-list/)
+- [Events:](https://wiki.hyprland.org/Plugins/Development/Event-list/) to
+  subscribe and handle Hyprland events, see
+  [events](./examples/events/events.go) for an example on how to use it.
 
 ## Development
 

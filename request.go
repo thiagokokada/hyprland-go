@@ -8,12 +8,9 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
-	"os/user"
-	"path/filepath"
 	"strings"
 
-	"github.com/thiagokokada/hyprland-go/internal/assert"
+	"github.com/thiagokokada/hyprland-go/internal/helpers"
 )
 
 const (
@@ -207,21 +204,6 @@ func (c *RequestClient) doRequest(command string, params ...string) (response Ra
 	return buf.Bytes(), nil
 }
 
-func mustSocket(socket string) string {
-	his := os.Getenv("HYPRLAND_INSTANCE_SIGNATURE")
-	if his == "" {
-		panic("HYPRLAND_INSTANCE_SIGNATURE is empty, are you using Hyprland?")
-	}
-
-	// https://github.com/hyprwm/Hyprland/blob/83a5395eaa99fecef777827fff1de486c06b6180/hyprctl/main.cpp#L53-L62
-	runtimeDir := os.Getenv("XDG_RUNTIME_DIR")
-	if runtimeDir == "" {
-		user := assert.Must1(user.Current()).Uid
-		runtimeDir = filepath.Join("/run/user", user)
-	}
-	return filepath.Join(runtimeDir, "hypr", his, socket)
-}
-
 // Initiate a new client or panic.
 // This should be the preferred method for user scripts, since it will
 // automatically find the proper socket to connect and use the
@@ -229,7 +211,7 @@ func mustSocket(socket string) string {
 // If you need to connect to arbitrary user instances or need a method that
 // will not panic on error, use [NewClient] instead.
 func MustClient() *RequestClient {
-	return NewClient(mustSocket(".socket.sock"))
+	return NewClient(helpers.MustSocket(".socket.sock"))
 }
 
 // Initiate a new client.
