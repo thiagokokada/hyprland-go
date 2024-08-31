@@ -1,8 +1,11 @@
 package event
 
 import (
+	"os"
 	"testing"
+	"time"
 
+	"github.com/thiagokokada/hyprland-go"
 	"github.com/thiagokokada/hyprland-go/internal/assert"
 )
 
@@ -13,6 +16,30 @@ type FakeEventClient struct {
 type FakeEventHandler struct {
 	t *testing.T
 	EventHandler
+}
+
+func TestReceive(t *testing.T) {
+	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") == "" {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	// Generate an event
+	go func() {
+		c := hyprland.MustClient()
+		time.Sleep(100 * time.Millisecond)
+		c.Dispatch("exec kitty")
+	}()
+
+	// We must capture this event
+	c := MustEventClient()
+	data, err := c.Receive()
+
+	assert.NoError(t, err)
+	assert.True(t, len(data) >= 0)
+	for _, d := range data {
+		assert.NotEqual(t, string(d.Data), "")
+		assert.NotEqual(t, string(d.Type), "")
+	}
 }
 
 func TestSubscribe(t *testing.T) {
