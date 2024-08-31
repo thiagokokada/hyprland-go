@@ -8,7 +8,7 @@ import (
 )
 
 type ev struct {
-	event.NoopEventHandler
+	event.DefaultEventHandler
 }
 
 func (e *ev) Workspace(w event.WorkspaceName) {

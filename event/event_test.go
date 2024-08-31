@@ -14,7 +14,7 @@ type FakeEventClient struct {
 }
 
 type FakeEventHandler struct {
-	NoopEventHandler
+	DefaultEventHandler
 }
 
 func (f *FakeEventClient) Receive() ([]ReceivedData, error) {
