@@ -3,7 +3,6 @@ package event
 import "net"
 
 // EventClient is the event struct from hyprland-go.
-// Experimental: WIP
 type EventClient struct {
 	conn net.Conn
 }
@@ -17,9 +16,13 @@ type ReceivedData struct {
 	Data RawData
 }
 
-// EventHandler Hyprland will write to each connected ipc live events like this:
+// EventHandler is the interface that defines all methods to handle each of
+// events emitted by Hyprland.
+// You can find move information about each event in the main Hyprland Wiki:
+// https://wiki.hyprland.org/Plugins/Development/Event-list/.
 type EventHandler interface {
-	// Workspace emitted on workspace change. Is emitted ONLY when a user requests a workspace change, and is not emitted on mouse movements (see activemon)
+	// Workspace emitted on workspace change. Is emitted ONLY when a user
+	// requests a workspace change, and is not emitted on mouse movements.
 	Workspace(w WorkspaceName)
 	// FocusedMonitor emitted on the active monitor being changed.
 	FocusedMonitor(m FocusedMonitor)
@@ -27,30 +30,33 @@ type EventHandler interface {
 	ActiveWindow(w ActiveWindow)
 	// Fullscreen emitted when a fullscreen status of a window changes.
 	Fullscreen(f bool)
-	// MonitorRemoved emitted when a monitor is removed (disconnected)
+	// MonitorRemoved emitted when a monitor is removed (disconnected).
 	MonitorRemoved(m MonitorName)
-	// MonitorAdded emitted when a monitor is added (connected)
+	// MonitorAdded emitted when a monitor is added (connected).
 	MonitorAdded(m MonitorName)
-	// CreateWorkspace emitted when a workspace is created
+	// CreateWorkspace emitted when a workspace is created.
 	CreateWorkspace(w WorkspaceName)
-	// DestroyWorkspace emitted when a workspace is destroyed
+	// DestroyWorkspace emitted when a workspace is destroyed.
 	DestroyWorkspace(w WorkspaceName)
-	// MoveWorkspace emitted when a workspace is moved to a different monitor
+	// MoveWorkspace emitted when a workspace is moved to a different
+	// monitor.
 	MoveWorkspace(w MoveWorkspace)
-	// ActiveLayout emitted on a layout change of the active keyboard
+	// ActiveLayout emitted on a layout change of the active keyboard.
 	ActiveLayout(l ActiveLayout)
-	// OpenWindow emitted when a window is opened
+	// OpenWindow emitted when a window is opened.
 	OpenWindow(o OpenWindow)
-	// CloseWindow emitted when a window is closed
+	// CloseWindow emitted when a window is closed.
 	CloseWindow(c CloseWindow)
-	// MoveWindow emitted when a window is moved to a workspace
+	// MoveWindow emitted when a window is moved to a workspace.
 	MoveWindow(m MoveWindow)
-	// OpenLayer emitted when a layerSurface is mapped
+	// OpenLayer emitted when a layerSurface is mapped.
 	OpenLayer(l OpenLayer)
-	// CloseLayer emitted when a layerSurface is unmapped
+	// CloseLayer emitted when a layerSurface is unmapped.
 	CloseLayer(c CloseLayer)
 	// SubMap emitted when a keybind submap changes. Empty means default.
 	SubMap(s SubMap)
+	// Screencast is fired when the screencopy state of a client changes.
+	// Keep in mind there might be multiple separate clients.
 	Screencast(s Screencast)
 }
 

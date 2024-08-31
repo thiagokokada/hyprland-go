@@ -20,7 +20,6 @@ const (
 // HYPRLAND_INSTANCE_SIGNATURE for the current user.
 // If you need to connect to arbitrary user instances or need a method that
 // will not panic on error, use [NewEventClient] instead.
-// Experimental: WIP
 func MustEventClient() *EventClient {
 	return assert.Must1(NewEventClient(helpers.MustSocket(".socket2.sock")))
 }
@@ -28,7 +27,6 @@ func MustEventClient() *EventClient {
 // Initiate a new event client.
 // Receive as parameters a socket that is generally localised in
 // '$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock'.
-// Experimental: WIP
 func NewEventClient(socket string) (*EventClient, error) {
 	conn, err := net.Dial("unix", socket)
 	if err != nil {
@@ -39,7 +37,6 @@ func NewEventClient(socket string) (*EventClient, error) {
 
 // Low-level receive event method, should be avoided unless there is no
 // alternative.
-// Experimental: WIP
 func (c *EventClient) Receive() ([]ReceivedData, error) {
 	buf := make([]byte, bufSize)
 	n, err := c.conn.Read(buf)
@@ -70,6 +67,9 @@ func (c *EventClient) Receive() ([]ReceivedData, error) {
 	return recv, nil
 }
 
+// Subscribe to events.
+// You need to pass an implementation of [EventHandler] interface for each of
+// the events you want to handle and all event types you want to handle.
 func (c *EventClient) Subscribe(ev EventHandler, events ...EventType) error {
 	for {
 		msg, err := c.Receive()
