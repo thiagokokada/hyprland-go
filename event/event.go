@@ -36,6 +36,11 @@ func NewEventClient(socket string) (*EventClient, error) {
 	return &EventClient{conn: conn}, nil
 }
 
+// Close the underlying connection.
+func (c *EventClient) Close() error {
+	return c.conn.Close()
+}
+
 // Low-level receive event method, should be avoided unless there is no
 // alternative.
 func (c *EventClient) Receive() ([]ReceivedData, error) {
