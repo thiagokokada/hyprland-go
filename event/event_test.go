@@ -99,13 +99,13 @@ func (f *FakeEventClient) Receive() ([]ReceivedData, error) {
 }
 
 func TestSubscribe(t *testing.T) {
-	err := c.SubscribeWithoutLoop(h, GetAllEvents()...)
+	err := SubscribeWithoutLoop(*c, h, GetAllEvents()...)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
-func (c *FakeEventClient) SubscribeWithoutLoop(ev EventHandler, events ...EventType) error {
+func SubscribeWithoutLoop(c FakeEventClient, ev EventHandler, events ...EventType) error {
 	msg, err := c.Receive()
 	if err != nil {
 		return err
