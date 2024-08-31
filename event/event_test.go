@@ -45,7 +45,7 @@ func TestReceive(t *testing.T) {
 func TestSubscribe(t *testing.T) {
 	h := &FakeEventHandler{t: t}
 	c := &FakeEventClient{}
-	err := SubscribeWithoutLoop(*c, h, AllEvents...)
+	err := subscribeOnce(c, h, AllEvents...)
 	assert.NoError(t, err)
 }
 
@@ -203,17 +203,4 @@ func (h *FakeEventHandler) SubMap(s SubMap) {
 func (h *FakeEventHandler) Screencast(s Screencast) {
 	assert.Equal(h.t, s.Owner, "0")
 	assert.Equal(h.t, s.Sharing, true)
-}
-
-func SubscribeWithoutLoop(c FakeEventClient, ev EventHandler, events ...EventType) error {
-	msg, err := c.Receive()
-	if err != nil {
-		return err
-	}
-
-	for _, data := range msg {
-		processEvent(ev, data, events)
-	}
-
-	return nil
 }

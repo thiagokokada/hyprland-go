@@ -74,15 +74,21 @@ func (c *EventClient) Receive() ([]ReceivedData, error) {
 // the events you want to handle and all event types you want to handle.
 func Subscribe(c *EventClient, ev EventHandler, events ...EventType) error {
 	for {
-		msg, err := c.Receive()
-		if err != nil {
-			return err
-		}
-
-		for _, data := range msg {
-			processEvent(ev, data, events)
-		}
+		subscribeOnce(c, ev, events...)
 	}
+}
+
+func subscribeOnce(c eventClient, ev EventHandler, events ...EventType) error {
+	msg, err := c.Receive()
+	if err != nil {
+		return err
+	}
+
+	for _, data := range msg {
+		processEvent(ev, data, events)
+	}
+
+	return nil
 }
 
 func processEvent(ev EventHandler, msg ReceivedData, events []EventType) {
