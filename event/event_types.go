@@ -1,10 +1,14 @@
 package event
 
-import "net"
+import (
+	"context"
+	"net"
+)
 
 // EventClient is the event struct from hyprland-go.
 type EventClient struct {
 	conn net.Conn
+	ctx  context.Context
 }
 
 // Event Client interface, right now only used for testing.
