@@ -46,7 +46,7 @@ func TestReceive(t *testing.T) {
 func TestSubscribe(t *testing.T) {
 	h := &FakeEventHandler{t: t}
 	c := &FakeEventClient{}
-	err := subscribeOnce(c, h, AllEvents...)
+	err := receiveAndProcessEvent(c, h, AllEvents...)
 	assert.NoError(t, err)
 }
 

@@ -2,6 +2,7 @@ package event
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"net"
 	"strings"
@@ -22,23 +23,33 @@ const (
 // If you need to connect to arbitrary user instances or need a method that
 // will not panic on error, use [NewClient] instead.
 func MustClient() *EventClient {
-	return assert.Must1(NewClient(helpers.MustSocket(".socket2.sock")))
+	return assert.Must1(NewClient(
+		context.Background(),
+		helpers.MustSocket(".socket2.sock"),
+	))
 }
 
 // Initiate a new event client.
 // Receive as parameters a socket that is generally localised in
 // '$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock'.
-func NewClient(socket string) (*EventClient, error) {
-	conn, err := net.Dial("unix", socket)
+// The ctx ([context.Context]) parameter is passed to the underlying socket to
+// allow cancellations and timeouts for the Hyprland event socket.
+func NewClient(ctx context.Context, socket string) (*EventClient, error) {
+	dialer := &net.Dialer{}
+	conn, err := dialer.DialContext(ctx, "unix", socket)
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to socket: %w", err)
 	}
-	return &EventClient{conn: conn}, nil
+	return &EventClient{conn: conn, ctx: ctx}, err
 }
 
 // Close the underlying connection.
 func (c *EventClient) Close() error {
-	return c.conn.Close()
+	err := c.conn.Close()
+	if err != nil {
+		return fmt.Errorf("error while closing socket: %w", err)
+	}
+	return err
 }
 
 // Low-level receive event method, should be avoided unless there is no
@@ -48,7 +59,7 @@ func (c *EventClient) Receive() ([]ReceivedData, error) {
 	reader := bufio.NewReader(c.conn)
 	n, err := reader.Read(buf)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while reading from socket: %w", err)
 	}
 
 	buf = buf[:n]
@@ -77,13 +88,20 @@ func (c *EventClient) Receive() ([]ReceivedData, error) {
 // Subscribe to events.
 // You need to pass an implementation of [EventHandler] interface for each of
 // the events you want to handle and all event types you want to handle.
-func Subscribe(c *EventClient, ev EventHandler, events ...EventType) error {
+func (c *EventClient) Subscribe(ev EventHandler, events ...EventType) error {
 	for {
-		subscribeOnce(c, ev, events...)
+		// The context is done, exit
+		if err := c.ctx.Err(); err != nil {
+			return fmt.Errorf("context is done: %w", err)
+		}
+		// Otherwise process an event
+		if err := receiveAndProcessEvent(c, ev, events...); err != nil {
+			return fmt.Errorf("error during event processing: %w", err)
+		}
 	}
 }
 
-func subscribeOnce(c eventClient, ev EventHandler, events ...EventType) error {
+func receiveAndProcessEvent(c eventClient, ev EventHandler, events ...EventType) error {
 	msg, err := c.Receive()
 	if err != nil {
 		return err
