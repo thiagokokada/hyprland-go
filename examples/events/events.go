@@ -2,7 +2,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/thiagokokada/hyprland-go/event"
 )
@@ -20,13 +22,22 @@ func (e *ev) ActiveWindow(w event.ActiveWindow) {
 }
 
 func main() {
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		5*time.Second,
+	)
+	defer cancel()
+
 	c := event.MustClient()
 	defer c.Close()
 
+	// Will listen for events for 5 seconds and exit
 	c.Subscribe(
+		ctx,
 		&ev{},
 		event.EventWorkspace,
 		event.EventActiveWindow,
 	)
 
+	fmt.Println("Bye!")
 }

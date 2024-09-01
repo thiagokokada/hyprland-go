@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/thiagokokada/hyprland-go/helpers"
 	"github.com/thiagokokada/hyprland-go/internal/assert"
@@ -24,7 +25,6 @@ const (
 // will not panic on error, use [NewClient] instead.
 func MustClient() *EventClient {
 	return assert.Must1(NewClient(
-		context.Background(),
 		assert.Must1(helpers.GetSocket(helpers.EventSocket))),
 	)
 }
@@ -34,13 +34,12 @@ func MustClient() *EventClient {
 // '$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock'.
 // The ctx ([context.Context]) parameter is passed to the underlying socket to
 // allow cancellations and timeouts for the Hyprland event socket.
-func NewClient(ctx context.Context, socket string) (*EventClient, error) {
-	dialer := &net.Dialer{}
-	conn, err := dialer.DialContext(ctx, "unix", socket)
+func NewClient(socket string) (*EventClient, error) {
+	conn, err := net.Dial("unix", socket)
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to socket: %w", err)
 	}
-	return &EventClient{conn: conn, ctx: ctx}, err
+	return &EventClient{conn: conn}, err
 }
 
 // Close the underlying connection.
@@ -54,10 +53,10 @@ func (c *EventClient) Close() error {
 
 // Low-level receive event method, should be avoided unless there is no
 // alternative.
-func (c *EventClient) Receive() ([]ReceivedData, error) {
+func (c *EventClient) Receive(ctx context.Context) ([]ReceivedData, error) {
 	buf := make([]byte, bufSize)
-	reader := bufio.NewReader(c.conn)
-	n, err := reader.Read(buf)
+
+	n, err := readWithContext(ctx, c.conn, buf)
 	if err != nil {
 		return nil, fmt.Errorf("error while reading from socket: %w", err)
 	}
@@ -88,21 +87,40 @@ func (c *EventClient) Receive() ([]ReceivedData, error) {
 // Subscribe to events.
 // You need to pass an implementation of [EventHandler] interface for each of
 // the events you want to handle and all event types you want to handle.
-func (c *EventClient) Subscribe(ev EventHandler, events ...EventType) error {
+func (c *EventClient) Subscribe(ctx context.Context, ev EventHandler, events ...EventType) error {
 	for {
-		// The context is done, exit
-		if err := c.ctx.Err(); err != nil {
-			return fmt.Errorf("context is done: %w", err)
-		}
-		// Otherwise process an event
-		if err := receiveAndProcessEvent(c, ev, events...); err != nil {
-			return fmt.Errorf("error during event processing: %w", err)
+		// Process an event
+		if err := receiveAndProcessEvent(ctx, c, ev, events...); err != nil {
+			return fmt.Errorf("event processing: %w", err)
 		}
 	}
 }
 
-func receiveAndProcessEvent(c eventClient, ev EventHandler, events ...EventType) error {
-	msg, err := c.Receive()
+func readWithContext(ctx context.Context, conn net.Conn, buf []byte) (int, error) {
+	done := make(chan struct{})
+	var n int
+	var err error
+
+	// Start a goroutine to perform the read
+	go func() {
+		reader := bufio.NewReader(conn)
+		n, err = reader.Read(buf)
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return n, err
+	case <-ctx.Done():
+		// Set a short deadline to unblock the Read()
+		conn.SetReadDeadline(time.Now())
+		<-done // Make sure that the goroutine is done to avoid leaks
+		return 0, ctx.Err()
+	}
+}
+
+func receiveAndProcessEvent(ctx context.Context, c eventClient, ev EventHandler, events ...EventType) error {
+	msg, err := c.Receive(ctx)
 	if err != nil {
 		return err
 	}

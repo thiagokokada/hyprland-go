@@ -1,6 +1,7 @@
 package event
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -30,11 +31,11 @@ func TestReceive(t *testing.T) {
 		c.Dispatch("exec kitty sh -c 'echo Testing hyprland-go events && sleep 1'")
 	}()
 
-	// We must capture this event
 	c := MustClient()
 	defer c.Close()
-	data, err := c.Receive()
+	data, err := c.Receive(context.Background())
 
+	// We must capture the event
 	assert.NoError(t, err)
 	assert.True(t, len(data) >= 0)
 	for _, d := range data {
@@ -43,14 +44,14 @@ func TestReceive(t *testing.T) {
 	}
 }
 
-func TestSubscribe(t *testing.T) {
+func TestProcessEvent(t *testing.T) {
 	h := &FakeEventHandler{t: t}
 	c := &FakeEventClient{}
-	err := receiveAndProcessEvent(c, h, AllEvents...)
+	err := receiveAndProcessEvent(context.Background(), c, h, AllEvents...)
 	assert.NoError(t, err)
 }
 
-func (f *FakeEventClient) Receive() ([]ReceivedData, error) {
+func (f *FakeEventClient) Receive(context.Context) ([]ReceivedData, error) {
 	return []ReceivedData{
 		{
 			Type: EventWorkspace,
