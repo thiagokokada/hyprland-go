@@ -23,8 +23,8 @@ func main() {
 	c := event.MustClient()
 	defer c.Close()
 
-	event.Subscribe(
-		c, &ev{},
+	c.Subscribe(
+		&ev{},
 		event.EventWorkspace,
 		event.EventActiveWindow,
 	)

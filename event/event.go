@@ -77,7 +77,7 @@ func (c *EventClient) Receive() ([]ReceivedData, error) {
 // Subscribe to events.
 // You need to pass an implementation of [EventHandler] interface for each of
 // the events you want to handle and all event types you want to handle.
-func Subscribe(c *EventClient, ev EventHandler, events ...EventType) error {
+func (c *EventClient) Subscribe(ev EventHandler, events ...EventType) error {
 	for {
 		subscribeOnce(c, ev, events...)
 	}
