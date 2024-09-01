@@ -49,21 +49,38 @@ func TestSubscribe(t *testing.T) {
 	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") == "" {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
-
 	c := MustClient()
 	defer c.Close()
+
+	// Make sure that we can exit a Subscribe loop by cancelling the
+	// context
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
 		100*time.Millisecond,
 	)
-	defer cancel()
 
-	// Make sure that we can exit a Subscribe loop by cancelling the
-	// context
 	err := c.Subscribe(ctx, &DefaultEventHandler{}, AllEvents...)
+	cancel()
 
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, context.DeadlineExceeded))
+
+	// Make sure that we can call Subscribe again it can still be used,
+	// e.g.: the conn read deadline is not set otherwise it will exit
+	// immediatelly
+	ctx, cancel = context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		cancel()
+	}()
+
+	start := time.Now()
+	err = c.Subscribe(ctx, &DefaultEventHandler{}, AllEvents...)
+	elapsed := time.Since(start)
+
+	assert.Error(t, err)
+	assert.True(t, errors.Is(err, context.Canceled))
+	assert.True(t, elapsed >= 100*time.Millisecond)
 }
 
 func TestProcessEvent(t *testing.T) {
