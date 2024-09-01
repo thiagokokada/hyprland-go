@@ -24,18 +24,21 @@ func TestGetSocketWithoutXdg(t *testing.T) {
 	t.Setenv("HYPRLAND_INSTANCE_SIGNATURE", "bar")
 	t.Setenv("XDG_RUNTIME_DIR", "")
 
+	u, err := user.Current()
+	assert.NoError(t, err)
+
 	socket, err := GetSocket(RequestSocket)
 	assert.NoError(t, err)
-	assert.Equal(t, socket, "/run/user/"+getUid(t)+"/hypr/bar/.socket.sock")
+	assert.Equal(t, socket, "/run/user/"+u.Uid+"/hypr/bar/.socket.sock")
 
 	socket, err = GetSocket(EventSocket)
 	assert.NoError(t, err)
-	assert.Equal(t, socket, "/run/user/"+getUid(t)+"/hypr/bar/.socket2.sock")
+	assert.Equal(t, socket, "/run/user/"+u.Uid+"/hypr/bar/.socket2.sock")
 }
 
-func getUid(t *testing.T) string {
-	t.Helper()
-	u, err := user.Current()
-	assert.NoError(t, err)
-	return u.Uid
+func TestGetSocketError(t *testing.T) {
+	t.Setenv("HYPRLAND_INSTANCE_SIGNATURE", "")
+
+	_, err := GetSocket(RequestSocket)
+	assert.Error(t, err)
 }
