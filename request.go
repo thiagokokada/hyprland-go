@@ -10,7 +10,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/thiagokokada/hyprland-go/internal/helpers"
+	"github.com/thiagokokada/hyprland-go/helpers"
+	"github.com/thiagokokada/hyprland-go/internal/assert"
 )
 
 const (
@@ -211,7 +212,9 @@ func (c *RequestClient) doRequest(command string, params ...string) (response Ra
 // If you need to connect to arbitrary user instances or need a method that
 // will not panic on error, use [NewClient] instead.
 func MustClient() *RequestClient {
-	return NewClient(helpers.MustSocket(".socket.sock"))
+	return NewClient(
+		assert.Must1(helpers.GetSocket(helpers.RequestSocket)),
+	)
 }
 
 // Initiate a new client.
