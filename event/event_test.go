@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -42,6 +43,27 @@ func TestReceive(t *testing.T) {
 		assert.NotEqual(t, string(d.Data), "")
 		assert.NotEqual(t, string(d.Type), "")
 	}
+}
+
+func TestSubscribe(t *testing.T) {
+	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") == "" {
+		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
+	}
+
+	c := MustClient()
+	defer c.Close()
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		100*time.Millisecond,
+	)
+	defer cancel()
+
+	// Make sure that we can exit a Subscribe loop by cancelling the
+	// context
+	err := c.Subscribe(ctx, &DefaultEventHandler{}, AllEvents...)
+
+	assert.Error(t, err)
+	assert.True(t, errors.Is(err, context.DeadlineExceeded))
 }
 
 func TestProcessEvent(t *testing.T) {
