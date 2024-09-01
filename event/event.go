@@ -7,8 +7,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/thiagokokada/hyprland-go/helpers"
 	"github.com/thiagokokada/hyprland-go/internal/assert"
-	"github.com/thiagokokada/hyprland-go/internal/helpers"
 )
 
 const (
@@ -25,8 +25,8 @@ const (
 func MustClient() *EventClient {
 	return assert.Must1(NewClient(
 		context.Background(),
-		helpers.MustSocket(".socket2.sock"),
-	))
+		assert.Must1(helpers.GetSocket(helpers.EventSocket))),
+	)
 }
 
 // Initiate a new event client.
