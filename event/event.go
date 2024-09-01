@@ -114,7 +114,10 @@ func readWithContext(ctx context.Context, conn net.Conn, buf []byte) (int, error
 	case <-ctx.Done():
 		// Set a short deadline to unblock the Read()
 		conn.SetReadDeadline(time.Now())
-		<-done // Make sure that the goroutine is done to avoid leaks
+		// Reset read deadline
+		defer conn.SetReadDeadline(time.Time{})
+		// Make sure that the goroutine is done to avoid leaks
+		<-done
 		return 0, ctx.Err()
 	}
 }
