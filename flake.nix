@@ -161,6 +161,7 @@
             src = ./.;
 
             subPackages = [
+              "examples/events"
               "examples/hyprctl"
               "examples/hyprtabs"
             ];
