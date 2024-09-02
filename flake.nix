@@ -6,7 +6,7 @@
   };
 
   outputs =
-    { nixpkgs, ... }:
+    { self, nixpkgs, ... }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -156,7 +156,7 @@
           default = hyprland-go;
           hyprland-go = pkgs.buildGoModule {
             pname = "hyprland-go";
-            version = "0.0.1";
+            version = self.shortRev or "dirty";
 
             src = ./.;
 
