@@ -39,10 +39,7 @@ func NewClient(socket string) (*EventClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to socket: %w", err)
 	}
-	return &EventClient{
-		conn:   conn,
-		reader: bufio.NewReaderSize(conn, bufSize),
-	}, err
+	return &EventClient{conn: conn}, err
 }
 
 // Close the underlying connection.
@@ -59,7 +56,7 @@ func (c *EventClient) Close() error {
 func (c *EventClient) Receive(ctx context.Context) ([]ReceivedData, error) {
 	buf := make([]byte, bufSize)
 
-	n, err := c.readWithContext(ctx, buf)
+	n, err := readWithContext(ctx, c.conn, buf)
 	if err != nil {
 		return nil, fmt.Errorf("error while reading from socket: %w", err)
 	}
@@ -99,14 +96,15 @@ func (c *EventClient) Subscribe(ctx context.Context, ev EventHandler, events ...
 	}
 }
 
-func (c *EventClient) readWithContext(ctx context.Context, buf []byte) (int, error) {
+func readWithContext(ctx context.Context, conn net.Conn, buf []byte) (int, error) {
 	done := make(chan struct{})
 	var n int
 	var err error
 
 	// Start a goroutine to perform the read
 	go func() {
-		n, err = c.reader.Read(buf)
+		reader := bufio.NewReader(conn)
+		n, err = reader.Read(buf)
 		close(done)
 	}()
 
@@ -115,9 +113,9 @@ func (c *EventClient) readWithContext(ctx context.Context, buf []byte) (int, err
 		return n, err
 	case <-ctx.Done():
 		// Set a short deadline to unblock the Read()
-		c.conn.SetReadDeadline(time.Now())
+		conn.SetReadDeadline(time.Now())
 		// Reset read deadline
-		defer c.conn.SetReadDeadline(time.Time{})
+		defer conn.SetReadDeadline(time.Time{})
 		// Make sure that the goroutine is done to avoid leaks
 		<-done
 		return 0, ctx.Err()
