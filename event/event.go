@@ -1,7 +1,6 @@
 package event
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"net"
@@ -103,8 +102,7 @@ func readWithContext(ctx context.Context, conn net.Conn, buf []byte) (int, error
 
 	// Start a goroutine to perform the read
 	go func() {
-		reader := bufio.NewReader(conn)
-		n, err = reader.Read(buf)
+		n, err = conn.Read(buf)
 		close(done)
 	}()
 
