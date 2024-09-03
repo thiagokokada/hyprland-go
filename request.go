@@ -25,6 +25,7 @@ var reqHeader = []byte{'j', '/'}
 var reqSep = []byte{' ', ';'}
 
 func prepareRequest(buf *bytes.Buffer, command string, param string) int {
+	buf.Write(reqHeader)
 	buf.WriteString(command)
 	buf.WriteByte(reqSep[0])
 	buf.WriteString(param)
@@ -39,6 +40,10 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 		// misuse since this function is internal
 		panic("empty command")
 	}
+
+	// Buffer that will store the temporary prepared request
+	buf := bytes.NewBuffer(nil)
+
 	switch len(params) {
 	case 0:
 		if len(command)+len(reqHeader) > bufSize {
@@ -49,7 +54,8 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 				command,
 			)
 		}
-		requests = append(requests, []byte(command))
+		buf.Write(reqHeader)
+		buf.WriteString(command)
 	case 1:
 		request := command + " " + params[0]
 		if len(request)+len(reqHeader) > bufSize {
@@ -60,10 +66,9 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 				request,
 			)
 		}
-		requests = append(requests, []byte(request))
+		buf.Write(reqHeader)
+		buf.WriteString(request)
 	default:
-		buf := bytes.NewBuffer(nil)
-
 		// Add [[BATCH]] to the buffer
 		buf.WriteString(batch)
 		// Initialise current length of buffer
@@ -102,9 +107,10 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 			// Add the contents of the request to the buffer
 			curLen = prepareRequest(buf, command, param)
 		}
-		// Append any remaining buffer content to requests array
-		requests = append(requests, buf.Bytes())
 	}
+	// Append any remaining buffer content to requests array
+	requests = append(requests, buf.Bytes())
+
 	return requests, nil
 }
 
@@ -253,7 +259,6 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 	}
 
 	// Send the request to the socket
-	request = append(reqHeader, request...)
 	if len(request) > bufSize {
 		return nil, fmt.Errorf(
 			"request too big (%d>%d): %s",

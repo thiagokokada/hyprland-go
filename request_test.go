@@ -75,9 +75,9 @@ func TestPrepareRequests(t *testing.T) {
 		params   []string
 		expected []string
 	}{
-		{"command", nil, []string{"command"}},
-		{"command", []string{"param0"}, []string{"command param0"}},
-		{"command", []string{"param0", "param1"}, []string{"[[BATCH]]command param0;command param1;"}},
+		{"command", nil, []string{"j/command"}},
+		{"command", []string{"param0"}, []string{"j/command param0"}},
+		{"command", []string{"param0", "param1"}, []string{"[[BATCH]]j/command param0;j/command param1;"}},
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("tests_%s-%s", tt.command, tt.params), func(t *testing.T) {
@@ -102,8 +102,8 @@ func TestPrepareRequestsMass(t *testing.T) {
 		{"command", genParams("very big param list", 100), 1},
 		{"command", genParams("very big param list", 500), 2},
 		{"command", genParams("very big param list", 1000), 4},
-		{"command", genParams("very big param list", 5000), 18},
-		{"command", genParams("very big param list", 10000), 35},
+		{"command", genParams("very big param list", 5000), 19},
+		{"command", genParams("very big param list", 10000), 37},
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("mass_tests_%s-%d", tt.command, len(tt.params)), func(t *testing.T) {
