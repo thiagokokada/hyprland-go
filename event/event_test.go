@@ -1,8 +1,11 @@
 package event
 
 import (
+	"bufio"
 	"context"
 	"errors"
+	"math/rand"
+	"net"
 	"os"
 	"testing"
 	"time"
@@ -10,6 +13,8 @@ import (
 	"github.com/thiagokokada/hyprland-go"
 	"github.com/thiagokokada/hyprland-go/internal/assert"
 )
+
+const socketPath = "/tmp/bench_unix_socket.sock"
 
 type FakeEventClient struct {
 	EventClient
@@ -244,4 +249,92 @@ func (h *FakeEventHandler) SubMap(s SubMap) {
 func (h *FakeEventHandler) Screencast(s Screencast) {
 	assert.Equal(h.t, s.Owner, "0")
 	assert.Equal(h.t, s.Sharing, true)
+}
+
+func BenchmarkReceive(b *testing.B) {
+	go RandomStringServer()
+
+	// Make sure the socket exist
+	for i := 0; i < 10; i++ {
+		time.Sleep(100 * time.Millisecond)
+		if _, err := os.Stat(socketPath); err != nil {
+			break
+		}
+	}
+
+	c := assert.Must1(NewClient(socketPath))
+	defer c.Close()
+
+	ctx := context.Background()
+
+	// Reset setup time
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c.Receive(ctx)
+	}
+}
+
+// This function needs to be as fast as possible, otherwise this is the
+// bottleneck
+// https://stackoverflow.com/a/31832326
+const (
+	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
+func RandomBytes(n int) []byte {
+	b := make([]byte, n)
+	// A rand.Int63() generates 63 random bits, enough for letterIdxMax letters!
+	for i, cache, remain := n-1, rand.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = rand.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return b
+}
+
+func RandomStringServer() {
+	// Remove the previous socket file if it exists
+	if err := os.RemoveAll(socketPath); err != nil {
+		panic(err)
+	}
+
+	listener, err := net.Listen("unix", socketPath)
+	if err != nil {
+		panic(err)
+	}
+	defer listener.Close()
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			panic(err)
+		}
+		writer := bufio.NewWriter(conn)
+
+		go func(c net.Conn) {
+			defer c.Close()
+
+			for {
+				prefix := []byte(">>>")
+				randomData := RandomBytes(16)
+				message := append(prefix, randomData...)
+
+				// Send the message to the client
+				_, err := writer.Write(message)
+				if err != nil {
+					return
+				}
+			}
+		}(conn)
+	}
 }
