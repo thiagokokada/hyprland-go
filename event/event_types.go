@@ -1,13 +1,15 @@
 package event
 
 import (
+	"bufio"
 	"context"
 	"net"
 )
 
 // EventClient is the event struct from hyprland-go.
 type EventClient struct {
-	conn net.Conn
+	conn   net.Conn
+	reader *bufio.Reader
 }
 
 // Event Client interface, right now only used for testing.
