@@ -36,6 +36,7 @@ func prepareRequest(buf *bytes.Buffer, command string, param string, jsonResp bo
 	return buf.Len()
 }
 
+// TODO: needs refactor, the logic is all over the place
 func prepareRequests(command string, params []string, jsonResp bool) (requests []RawRequest, err error) {
 	if command == "" {
 		// Panic since this is not supposed to happen, i.e.: only by
