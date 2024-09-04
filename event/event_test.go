@@ -43,7 +43,7 @@ func TestReceive(t *testing.T) {
 
 	// We must capture the event
 	assert.NoError(t, err)
-	assert.True(t, len(data) >= 0)
+	assert.GreaterOrEqual(t, len(data), 1)
 	for _, d := range data {
 		assert.NotEqual(t, string(d.Data), "")
 		assert.NotEqual(t, string(d.Type), "")
@@ -85,7 +85,7 @@ func TestSubscribe(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, context.Canceled))
-	assert.True(t, elapsed >= 100*time.Millisecond)
+	assert.GreaterOrEqual(t, elapsed, 100*time.Millisecond)
 }
 
 func TestProcessEvent(t *testing.T) {
