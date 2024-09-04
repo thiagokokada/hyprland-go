@@ -84,7 +84,7 @@ func TestPrepareRequests(t *testing.T) {
 		{"command", []string{"param0", "param1"}, false, []string{"[[BATCH]]command param0;command param1;"}},
 	}
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("tests_%s-%s", tt.command, tt.params), func(t *testing.T) {
+		t.Run(fmt.Sprintf("tests_%s-%s-%v", tt.command, tt.params, tt.jsonResp), func(t *testing.T) {
 			requests, err := prepareRequests(tt.command, tt.params, tt.jsonResp)
 			assert.NoError(t, err)
 			for i, e := range tt.expected {
@@ -119,26 +119,36 @@ func TestPrepareRequestsMass(t *testing.T) {
 }
 
 func TestPrepareRequestsError(t *testing.T) {
-	_, err := prepareRequests(
-		strings.Repeat("c", bufSize-1),
-		nil,
-		true,
-	)
-	assert.Error(t, err)
-
-	_, err = prepareRequests(
-		strings.Repeat("c", bufSize-len("p ")-1),
-		genParams("p", 1),
-		true,
-	)
-	assert.Error(t, err)
-
-	_, err = prepareRequests(
-		strings.Repeat("c", bufSize-len(batch+" p;")-1),
-		genParams("p", 5),
-		true,
-	)
-	assert.Error(t, err)
+	tests := []struct {
+		lastSafeLen int
+		paramsLen   int
+		jsonResp    bool
+	}{
+		{bufSize - len(reqHeader), 0, true},                                // '/j<command>'
+		{bufSize - len(reqHeader) - 2, 1, true},                            // '/j<command> p'
+		{bufSize - len(reqHeader) - len(batch) - len(reqSep) - 1, 2, true}, // '[[BATCH]]/j<command> p;'
+		{bufSize, 0, false},                                                // '<command>'
+		{bufSize - 2, 1, false},                                            // '<command> p'
+		{bufSize - len(batch) - len(reqSep) - 1, 2, false},                 // '[[BATCH]]<command> p;'
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("tests_%d-%d-%v", tt.lastSafeLen, tt.paramsLen, tt.jsonResp), func(t *testing.T) {
+			// With last safe length, we should have no errors
+			_, err := prepareRequests(
+				strings.Repeat("c", tt.lastSafeLen),
+				genParams("p", tt.paramsLen),
+				tt.jsonResp,
+			)
+			assert.NoError(t, err)
+			// Now we should have errors
+			_, err = prepareRequests(
+				strings.Repeat("c", tt.lastSafeLen+1),
+				genParams("p", tt.paramsLen),
+				tt.jsonResp,
+			)
+			assert.Error(t, err)
+		})
+	}
 }
 
 func BenchmarkPrepareRequests(b *testing.B) {
