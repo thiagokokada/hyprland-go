@@ -24,8 +24,10 @@ const (
 var reqHeader = []byte{'j', '/'}
 var reqSep = []byte{' ', ';'}
 
-func prepareRequest(buf *bytes.Buffer, command string, param string) int {
-	buf.Write(reqHeader)
+func prepareRequest(buf *bytes.Buffer, command string, param string, jsonResp bool) int {
+	if jsonResp {
+		buf.Write(reqHeader)
+	}
 	buf.WriteString(command)
 	buf.WriteByte(reqSep[0])
 	buf.WriteString(param)
@@ -34,8 +36,8 @@ func prepareRequest(buf *bytes.Buffer, command string, param string) int {
 	return buf.Len()
 }
 
-// TODO: add jsonResponse parameter here to allow us to append or not 'j/'
-func prepareRequests(command string, params []string) (requests []RawRequest, err error) {
+// TODO: needs refactor, the logic is all over the place
+func prepareRequests(command string, params []string, jsonResp bool) (requests []RawRequest, err error) {
 	if command == "" {
 		// Panic since this is not supposed to happen, i.e.: only by
 		// misuse since this function is internal
@@ -46,29 +48,24 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 	buf := bytes.NewBuffer(nil)
 
 	switch len(params) {
-	case 0:
-		if len(command)+len(reqHeader) > bufSize {
-			return nil, fmt.Errorf(
-				"command is too long (%d>=%d): %s",
-				len(command),
-				bufSize,
-				command,
-			)
+	case 0, 1:
+		if jsonResp {
+			buf.Write(reqHeader)
 		}
-		buf.Write(reqHeader)
 		buf.WriteString(command)
-	case 1:
-		request := command + " " + params[0]
-		if len(request)+len(reqHeader) > bufSize {
+		if len(params) == 1 {
+			buf.WriteByte(reqSep[0])
+			buf.WriteString(params[0])
+		}
+
+		if buf.Len() > bufSize {
 			return nil, fmt.Errorf(
 				"command is too long (%d>=%d): %s",
-				len(request),
+				buf.Len(),
 				bufSize,
-				request,
+				buf.String(),
 			)
 		}
-		buf.Write(reqHeader)
-		buf.WriteString(request)
 	default:
 		// Add [[BATCH]] to the buffer
 		buf.WriteString(batch)
@@ -78,7 +75,10 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 		for _, param := range params {
 			// Get the current command + param length + request
 			// header and separators
-			cmdLen := len(command) + len(param) + len(reqHeader) + len(reqSep)
+			cmdLen := len(command) + len(param) + len(reqSep)
+			if jsonResp {
+				cmdLen += len(reqHeader)
+			}
 
 			// If batch + command length is bigger than bufSize,
 			// return an error since it will not fit the socket
@@ -106,7 +106,7 @@ func prepareRequests(command string, params []string) (requests []RawRequest, er
 				buf.WriteString(batch)
 			}
 			// Add the contents of the request to the buffer
-			curLen = prepareRequest(buf, command, param)
+			curLen = prepareRequest(buf, command, param, jsonResp)
 		}
 	}
 	// Append any remaining buffer content to requests array
@@ -194,8 +194,8 @@ func unmarshalResponse[T any](response RawResponse, v *T) (T, error) {
 	return *v, nil
 }
 
-func (c *RequestClient) doRequest(command string, params ...string) (response RawResponse, err error) {
-	requests, err := prepareRequests(command, params)
+func (c *RequestClient) doRequest(command string, params []string, jsonResp bool) (response RawResponse, err error) {
+	requests, err := prepareRequests(command, params, jsonResp)
 	if err != nil {
 		return nil, fmt.Errorf("error while preparing request: %w", err)
 	}
@@ -301,7 +301,7 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 // Active window command, similar to 'hyprctl activewindow'.
 // Returns a [Window] object.
 func (c *RequestClient) ActiveWindow() (w Window, err error) {
-	response, err := c.doRequest("activewindow")
+	response, err := c.doRequest("activewindow", nil, true)
 	if err != nil {
 		return w, err
 	}
@@ -311,7 +311,7 @@ func (c *RequestClient) ActiveWindow() (w Window, err error) {
 // Get option command, similar to 'hyprctl activeworkspace'.
 // Returns a [Workspace] object.
 func (c *RequestClient) ActiveWorkspace() (w Workspace, err error) {
-	response, err := c.doRequest("activeworkspace")
+	response, err := c.doRequest("activeworkspace", nil, true)
 	if err != nil {
 		return w, err
 	}
@@ -321,7 +321,7 @@ func (c *RequestClient) ActiveWorkspace() (w Workspace, err error) {
 // Animations command, similar to 'hyprctl animations'.
 // Returns a [Animation] object.
 func (c *RequestClient) Animations() (a [][]Animation, err error) {
-	response, err := c.doRequest("animations")
+	response, err := c.doRequest("animations", nil, true)
 	if err != nil {
 		return a, err
 	}
@@ -331,7 +331,7 @@ func (c *RequestClient) Animations() (a [][]Animation, err error) {
 // Binds command, similar to 'hyprctl binds'.
 // Returns a [Bind] object.
 func (c *RequestClient) Binds() (b []Bind, err error) {
-	response, err := c.doRequest("binds")
+	response, err := c.doRequest("binds", nil, true)
 	if err != nil {
 		return b, err
 	}
@@ -341,7 +341,7 @@ func (c *RequestClient) Binds() (b []Bind, err error) {
 // Clients command, similar to 'hyprctl clients'.
 // Returns a [Client] object.
 func (c *RequestClient) Clients() (cl []Client, err error) {
-	response, err := c.doRequest("clients")
+	response, err := c.doRequest("clients", nil, true)
 	if err != nil {
 		return cl, err
 	}
@@ -351,7 +351,7 @@ func (c *RequestClient) Clients() (cl []Client, err error) {
 // ConfigErrors command, similar to `hyprctl configerrors`.
 // Returns a [ConfigError] object.
 func (c *RequestClient) ConfigErrors() (ce []ConfigError, err error) {
-	response, err := c.doRequest("configerrors")
+	response, err := c.doRequest("configerrors", nil, true)
 	if err != nil {
 		return ce, err
 	}
@@ -361,7 +361,7 @@ func (c *RequestClient) ConfigErrors() (ce []ConfigError, err error) {
 // Cursor position command, similar to 'hyprctl cursorpos'.
 // Returns a [CursorPos] object.
 func (c *RequestClient) CursorPos() (cu CursorPos, err error) {
-	response, err := c.doRequest("cursorpos")
+	response, err := c.doRequest("cursorpos", nil, true)
 	if err != nil {
 		return cu, err
 	}
@@ -371,7 +371,7 @@ func (c *RequestClient) CursorPos() (cu CursorPos, err error) {
 // Decorations command, similar to `hyprctl decorations`.
 // Returns a [Decoration] object.
 func (c *RequestClient) Decorations(regex string) (d []Decoration, err error) {
-	response, err := c.doRequest("decorations", regex)
+	response, err := c.doRequest("decorations", []string{regex}, true)
 	if err != nil {
 		return d, err
 	}
@@ -381,7 +381,7 @@ func (c *RequestClient) Decorations(regex string) (d []Decoration, err error) {
 // Devices command, similar to `hyprctl devices`.
 // Returns a [Devices] object.
 func (c *RequestClient) Devices() (d Devices, err error) {
-	response, err := c.doRequest("devices")
+	response, err := c.doRequest("devices", nil, true)
 	if err != nil {
 		return d, err
 	}
@@ -394,7 +394,7 @@ func (c *RequestClient) Devices() (d Devices, err error) {
 // Returns a [Response] list for each parameter, that may be useful for further
 // validations.
 func (c *RequestClient) Dispatch(params ...string) (r []Response, err error) {
-	raw, err := c.doRequest("dispatch", params...)
+	raw, err := c.doRequest("dispatch", params, false)
 	if err != nil {
 		return r, err
 	}
@@ -404,7 +404,7 @@ func (c *RequestClient) Dispatch(params ...string) (r []Response, err error) {
 // Get option command, similar to 'hyprctl getoption'.
 // Returns an [Option] object.
 func (c *RequestClient) GetOption(name string) (o Option, err error) {
-	response, err := c.doRequest("getoption", name)
+	response, err := c.doRequest("getoption", []string{name}, true)
 	if err != nil {
 		return o, err
 	}
@@ -417,7 +417,7 @@ func (c *RequestClient) GetOption(name string) (o Option, err error) {
 // Returns a [Response] list for each parameter, that may be useful for further
 // validations.
 func (c *RequestClient) Keyword(params ...string) (r []Response, err error) {
-	raw, err := c.doRequest("keyword", params...)
+	raw, err := c.doRequest("keyword", params, false)
 	if err != nil {
 		return r, err
 	}
@@ -429,7 +429,7 @@ func (c *RequestClient) Keyword(params ...string) (r []Response, err error) {
 // user to click in the window.
 // Returns a [Response], that may be useful for further validations.
 func (c *RequestClient) Kill() (r Response, err error) {
-	raw, err := c.doRequest("kill")
+	raw, err := c.doRequest("kill", nil, true)
 	if err != nil {
 		return r, err
 	}
@@ -440,7 +440,7 @@ func (c *RequestClient) Kill() (r Response, err error) {
 // Layer command, similar to 'hyprctl layers'.
 // Returns a [Layer] object.
 func (c *RequestClient) Layers() (l Layers, err error) {
-	response, err := c.doRequest("layers")
+	response, err := c.doRequest("layers", nil, true)
 	if err != nil {
 		return l, err
 	}
@@ -450,7 +450,7 @@ func (c *RequestClient) Layers() (l Layers, err error) {
 // Monitors command, similar to 'hyprctl monitors'.
 // Returns a [Monitor] object.
 func (c *RequestClient) Monitors() (m []Monitor, err error) {
-	response, err := c.doRequest("monitors")
+	response, err := c.doRequest("monitors", nil, true)
 	if err != nil {
 		return m, err
 	}
@@ -460,7 +460,7 @@ func (c *RequestClient) Monitors() (m []Monitor, err error) {
 // Reload command, similar to 'hyprctl reload'.
 // Returns a [Response], that may be useful for further validations.
 func (c *RequestClient) Reload() (r Response, err error) {
-	raw, err := c.doRequest("reload")
+	raw, err := c.doRequest("reload", nil, false)
 	if err != nil {
 		return r, err
 	}
@@ -471,7 +471,7 @@ func (c *RequestClient) Reload() (r Response, err error) {
 // Set cursor command, similar to 'hyprctl setcursor'.
 // Returns a [Response], that may be useful for further validations.
 func (c *RequestClient) SetCursor(theme string, size int) (r Response, err error) {
-	raw, err := c.doRequest("setcursor", fmt.Sprintf("%s %d", theme, size))
+	raw, err := c.doRequest("setcursor", []string{fmt.Sprintf("%s %d", theme, size)}, false)
 	if err != nil {
 		return r, err
 	}
@@ -483,7 +483,7 @@ func (c *RequestClient) SetCursor(theme string, size int) (r Response, err error
 // Returns a [Response], that may be useful for further validations.
 // Param cmd can be either 'next', 'prev' or an ID (e.g: 0).
 func (c *RequestClient) SwitchXkbLayout(device string, cmd string) (r Response, err error) {
-	raw, err := c.doRequest("switchxkblayout", fmt.Sprintf("%s %s", device, cmd))
+	raw, err := c.doRequest("switchxkblayout", []string{fmt.Sprintf("%s %s", device, cmd)}, false)
 	if err != nil {
 		return r, err
 	}
@@ -493,7 +493,7 @@ func (c *RequestClient) SwitchXkbLayout(device string, cmd string) (r Response, 
 
 // Splash command, similar to 'hyprctl splash'.
 func (c *RequestClient) Splash() (s string, err error) {
-	response, err := c.doRequest("splash")
+	response, err := c.doRequest("splash", nil, false)
 	if err != nil {
 		return s, err
 	}
@@ -503,7 +503,7 @@ func (c *RequestClient) Splash() (s string, err error) {
 // Version command, similar to 'hyprctl version'.
 // Returns a [Version] object.
 func (c *RequestClient) Version() (v Version, err error) {
-	response, err := c.doRequest("version")
+	response, err := c.doRequest("version", nil, true)
 	if err != nil {
 		return v, err
 	}
@@ -513,7 +513,7 @@ func (c *RequestClient) Version() (v Version, err error) {
 // Workspaces option command, similar to 'hyprctl workspaces'.
 // Returns a [Workspace] object.
 func (c *RequestClient) Workspaces() (w []Workspace, err error) {
-	response, err := c.doRequest("workspaces")
+	response, err := c.doRequest("workspaces", nil, true)
 	if err != nil {
 		return w, err
 	}

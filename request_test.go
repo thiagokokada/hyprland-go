@@ -73,15 +73,19 @@ func TestPrepareRequests(t *testing.T) {
 	tests := []struct {
 		command  string
 		params   []string
+		jsonResp bool
 		expected []string
 	}{
-		{"command", nil, []string{"j/command"}},
-		{"command", []string{"param0"}, []string{"j/command param0"}},
-		{"command", []string{"param0", "param1"}, []string{"[[BATCH]]j/command param0;j/command param1;"}},
+		{"command", nil, true, []string{"j/command"}},
+		{"command", []string{"param0"}, true, []string{"j/command param0"}},
+		{"command", []string{"param0", "param1"}, true, []string{"[[BATCH]]j/command param0;j/command param1;"}},
+		{"command", nil, false, []string{"command"}},
+		{"command", []string{"param0"}, false, []string{"command param0"}},
+		{"command", []string{"param0", "param1"}, false, []string{"[[BATCH]]command param0;command param1;"}},
 	}
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("tests_%s-%s", tt.command, tt.params), func(t *testing.T) {
-			requests, err := prepareRequests(tt.command, tt.params)
+		t.Run(fmt.Sprintf("tests_%s-%s-%v", tt.command, tt.params, tt.jsonResp), func(t *testing.T) {
+			requests, err := prepareRequests(tt.command, tt.params, tt.jsonResp)
 			assert.NoError(t, err)
 			for i, e := range tt.expected {
 				assert.Equal(t, string(requests[i]), e)
@@ -107,7 +111,7 @@ func TestPrepareRequestsMass(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("mass_tests_%s-%d", tt.command, len(tt.params)), func(t *testing.T) {
-			requests, err := prepareRequests(tt.command, tt.params)
+			requests, err := prepareRequests(tt.command, tt.params, true)
 			assert.NoError(t, err)
 			assert.Equal(t, len(requests), tt.expected)
 		})
@@ -115,30 +119,43 @@ func TestPrepareRequestsMass(t *testing.T) {
 }
 
 func TestPrepareRequestsError(t *testing.T) {
-	_, err := prepareRequests(
-		strings.Repeat("c", bufSize-1),
-		nil,
-	)
-	assert.Error(t, err)
-
-	_, err = prepareRequests(
-		strings.Repeat("c", bufSize-len("p ")-1),
-		genParams("p", 1),
-	)
-	assert.Error(t, err)
-
-	_, err = prepareRequests(
-		strings.Repeat("c", bufSize-len(batch+" p;")-1),
-		genParams("p", 5),
-	)
-	assert.Error(t, err)
+	tests := []struct {
+		lastSafeLen int
+		paramsLen   int
+		jsonResp    bool
+	}{
+		{bufSize - len(reqHeader), 0, true},                                // '/j<command>'
+		{bufSize - len(reqHeader) - 2, 1, true},                            // '/j<command> p'
+		{bufSize - len(reqHeader) - len(batch) - len(reqSep) - 1, 2, true}, // '[[BATCH]]/j<command> p;'
+		{bufSize, 0, false},                                                // '<command>'
+		{bufSize - 2, 1, false},                                            // '<command> p'
+		{bufSize - len(batch) - len(reqSep) - 1, 2, false},                 // '[[BATCH]]<command> p;'
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("tests_%d-%d-%v", tt.lastSafeLen, tt.paramsLen, tt.jsonResp), func(t *testing.T) {
+			// With last safe length, we should have no errors
+			_, err := prepareRequests(
+				strings.Repeat("c", tt.lastSafeLen),
+				genParams("p", tt.paramsLen),
+				tt.jsonResp,
+			)
+			assert.NoError(t, err)
+			// Now we should have errors
+			_, err = prepareRequests(
+				strings.Repeat("c", tt.lastSafeLen+1),
+				genParams("p", tt.paramsLen),
+				tt.jsonResp,
+			)
+			assert.Error(t, err)
+		})
+	}
 }
 
 func BenchmarkPrepareRequests(b *testing.B) {
 	params := genParams("param", 10000)
 
 	for i := 0; i < b.N; i++ {
-		prepareRequests("command", params)
+		prepareRequests("command", params, true)
 	}
 }
 
