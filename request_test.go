@@ -200,7 +200,7 @@ func TestValidateResponse(t *testing.T) {
 		wantErr  bool
 	}{
 		// empty response should error
-		{genParams("param", 1), []Response{}, []Response{""}, true},
+		{genParams("param", 1), []Response{}, []Response{}, true},
 		// happy path, nil param
 		{nil, []Response{"ok"}, []Response{"ok"}, false},
 		// happy path, 1 param

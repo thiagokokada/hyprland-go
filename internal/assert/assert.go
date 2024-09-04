@@ -1,6 +1,7 @@
 package assert
 
 import (
+	"cmp"
 	"reflect"
 	"testing"
 )
@@ -69,5 +70,33 @@ func True(t *testing.T, got bool) {
 	t.Helper()
 	if !got {
 		t.Errorf("got: %#v, want: true", got)
+	}
+}
+
+func GreaterOrEqual[T cmp.Ordered](t *testing.T, got, want T) {
+	t.Helper()
+	if !(got >= want) {
+		t.Errorf("got: %#v, want: >=%#v", got, want)
+	}
+}
+
+func Greater[T cmp.Ordered](t *testing.T, got, want T) {
+	t.Helper()
+	if !(got > want) {
+		t.Errorf("got: %#v, want: >%#v", got, want)
+	}
+}
+
+func LessOrEqual[T cmp.Ordered](t *testing.T, got, want T) {
+	t.Helper()
+	if !(got <= want) {
+		t.Errorf("got: %#v, want: <=%#v", got, want)
+	}
+}
+
+func Less[T cmp.Ordered](t *testing.T, got, want T) {
+	t.Helper()
+	if !(got < want) {
+		t.Errorf("got: %#v, want: <%#v", got, want)
 	}
 }
