@@ -138,7 +138,7 @@ func parseResponse(raw RawResponse) (response []Response, err error) {
 func validateResponse(params []string, response []Response) ([]Response, error) {
 	// Empty response, something went terrible wrong
 	if len(response) == 0 {
-		return []Response{""}, ValidationError("empty response")
+		return []Response{}, ValidationError("empty response")
 	}
 
 	// commands without parameters will have at least one return
