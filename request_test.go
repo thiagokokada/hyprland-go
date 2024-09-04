@@ -78,10 +78,10 @@ func TestPrepareRequests(t *testing.T) {
 	}{
 		{"command", nil, true, []string{"j/command"}},
 		{"command", []string{"param0"}, true, []string{"j/command param0"}},
-		{"command", []string{"param0", "param1"}, true, []string{"[[BATCH]]j/command param0;j/command param1;"}},
+		{"command", []string{"param0", "param1"}, true, []string{"[[BATCH]]j/command param0;j/command param1"}},
 		{"command", nil, false, []string{"command"}},
 		{"command", []string{"param0"}, false, []string{"command param0"}},
-		{"command", []string{"param0", "param1"}, false, []string{"[[BATCH]]command param0;command param1;"}},
+		{"command", []string{"param0", "param1"}, false, []string{"[[BATCH]]command param0;command param1"}},
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("tests_%s-%s-%v", tt.command, tt.params, tt.jsonResp), func(t *testing.T) {

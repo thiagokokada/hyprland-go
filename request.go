@@ -24,19 +24,41 @@ const (
 var reqHeader = []byte{'j', '/'}
 var reqSep = []byte{' ', ';'}
 
-func prepareRequest(buf *bytes.Buffer, command string, param string, jsonResp bool) int {
+func prepareRequest(
+	buf *bytes.Buffer,
+	command string,
+	param string,
+	jsonResp bool,
+	lastReq bool,
+) (int, error) {
+	prevLen := buf.Len()
+
 	if jsonResp {
 		buf.Write(reqHeader)
 	}
 	buf.WriteString(command)
-	buf.WriteByte(reqSep[0])
-	buf.WriteString(param)
-	buf.WriteByte(reqSep[1])
+	if param != "" {
+		buf.WriteByte(reqSep[0])
+		buf.WriteString(param)
+	}
+	if !lastReq {
+		buf.WriteByte(reqSep[1])
+	}
 
-	return buf.Len()
+	reqLen := buf.Len() - prevLen
+
+	if buf.Len() > bufSize {
+		return reqLen, fmt.Errorf(
+			"command is too long (%d>=%d): %s",
+			buf.Len(),
+			bufSize,
+			buf.String(),
+		)
+	}
+
+	return reqLen, nil
 }
 
-// TODO: needs refactor, the logic is all over the place
 func prepareRequests(command string, params []string, jsonResp bool) (requests []RawRequest, err error) {
 	if command == "" {
 		// Panic since this is not supposed to happen, i.e.: only by
@@ -48,67 +70,47 @@ func prepareRequests(command string, params []string, jsonResp bool) (requests [
 	buf := bytes.NewBuffer(nil)
 
 	switch len(params) {
-	case 0, 1:
-		if jsonResp {
-			buf.Write(reqHeader)
+	case 0:
+		_, err := prepareRequest(buf, command, "", jsonResp, true)
+		if err != nil {
+			return nil, err
 		}
-		buf.WriteString(command)
-		if len(params) == 1 {
-			buf.WriteByte(reqSep[0])
-			buf.WriteString(params[0])
-		}
-
-		if buf.Len() > bufSize {
-			return nil, fmt.Errorf(
-				"command is too long (%d>=%d): %s",
-				buf.Len(),
-				bufSize,
-				buf.String(),
-			)
+	case 1:
+		_, err := prepareRequest(buf, command, params[0], jsonResp, true)
+		if err != nil {
+			return nil, err
 		}
 	default:
 		// Add [[BATCH]] to the buffer
 		buf.WriteString(batch)
-		// Initialise current length of buffer
-		curLen := buf.Len()
 
-		for _, param := range params {
-			// Get the current command + param length + request
-			// header and separators
-			cmdLen := len(command) + len(param) + len(reqSep)
-			if jsonResp {
-				cmdLen += len(reqHeader)
+		for i, param := range params {
+		prepare:
+			reqLen, err := prepareRequest(buf, command, param, jsonResp, i == len(params)-1)
+			if err != nil {
+				// If request length + [[BATCH]] < bufSize, the
+				// request will fit as long as we reset the
+				// buffer
+				if reqLen+len(batch) <= bufSize {
+					// Append current buffer contents to
+					// the requests array, ignoring the
+					// current request
+					buf.Truncate(bufSize - reqLen)
+					requests = append(requests, buf.Bytes())
+
+					// Reset the current buffer and add
+					// [[BATCH]]
+					buf.Reset()
+					buf.WriteString(batch)
+
+					// Prepare the current request again
+					goto prepare
+				}
+				return nil, err
 			}
-
-			// If batch + command length is bigger than bufSize,
-			// return an error since it will not fit the socket
-			if len(batch)+cmdLen > bufSize {
-				return nil, fmt.Errorf(
-					"command is too long (%d>=%d): %s%s %s;",
-					len(batch)+cmdLen,
-					bufSize,
-					batch,
-					command,
-					param,
-				)
-			}
-
-			// If the current length of the buffer + command +
-			// param is bigger than bufSize, we will need to split
-			// the request
-			if curLen+cmdLen > bufSize {
-				// Append current buffer contents to the
-				// requests array
-				requests = append(requests, buf.Bytes())
-
-				// Reset the current buffer and add [[BATCH]]
-				buf.Reset()
-				buf.WriteString(batch)
-			}
-			// Add the contents of the request to the buffer
-			curLen = prepareRequest(buf, command, param, jsonResp)
 		}
 	}
+
 	// Append any remaining buffer content to requests array
 	requests = append(requests, buf.Bytes())
 

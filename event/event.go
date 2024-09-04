@@ -148,7 +148,7 @@ func processEvent(ev EventHandler, msg ReceivedData, events []EventType) {
 					WorkspaceName: WorkspaceName(raw[1]),
 				})
 			case EventActiveWindow:
-				// e.g. jetbrains-goland,hyprland-ipc-ipc – main.go
+				// e.g. nvim,nvim event/event.go
 				ev.ActiveWindow(ActiveWindow{
 					Name:  raw[0],
 					Title: raw[1],
