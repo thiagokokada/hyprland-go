@@ -141,11 +141,9 @@ func validateResponse(params []string, response []Response) ([]Response, error) 
 		return []Response{""}, ValidationError("empty response")
 	}
 
-	want := len(params)
-	if want == 0 {
-		// commands without parameters will have at least one return
-		want = 1
-	}
+	// commands without parameters will have at least one return
+	want := max(len(params), 1)
+
 	// we have a different number of requests and responses
 	if want != len(response) {
 		return response, ValidationError(fmt.Sprintf(
