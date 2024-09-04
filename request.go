@@ -21,12 +21,12 @@ const (
 	bufSize = 8192
 )
 
-var reqHeader = []byte{'j', '/'}
+var jsonReqHeader = []byte{'j', '/'}
 var reqSep = []byte{' ', ';'}
 
 func prepareRequest(buf *bytes.Buffer, command string, param string, jsonResp bool) int {
 	if jsonResp {
-		buf.Write(reqHeader)
+		buf.Write(jsonReqHeader)
 	}
 	buf.WriteString(command)
 	buf.WriteByte(reqSep[0])
@@ -36,7 +36,6 @@ func prepareRequest(buf *bytes.Buffer, command string, param string, jsonResp bo
 	return buf.Len()
 }
 
-// TODO: needs refactor, the logic is all over the place
 func prepareRequests(command string, params []string, jsonResp bool) (requests []RawRequest, err error) {
 	if command == "" {
 		// Panic since this is not supposed to happen, i.e.: only by
@@ -46,25 +45,35 @@ func prepareRequests(command string, params []string, jsonResp bool) (requests [
 
 	// Buffer that will store the temporary prepared request
 	buf := bytes.NewBuffer(nil)
+	bufErr := func() error {
+		return fmt.Errorf(
+			"command is too long (%d>=%d): %s",
+			buf.Len(),
+			bufSize,
+			buf.String(),
+		)
+	}
 
 	switch len(params) {
-	case 0, 1:
+	case 0:
 		if jsonResp {
-			buf.Write(reqHeader)
+			buf.Write(jsonReqHeader)
 		}
 		buf.WriteString(command)
-		if len(params) == 1 {
-			buf.WriteByte(reqSep[0])
-			buf.WriteString(params[0])
-		}
 
 		if buf.Len() > bufSize {
-			return nil, fmt.Errorf(
-				"command is too long (%d>=%d): %s",
-				buf.Len(),
-				bufSize,
-				buf.String(),
-			)
+			return nil, bufErr()
+		}
+	case 1:
+		if jsonResp {
+			buf.Write(jsonReqHeader)
+		}
+		buf.WriteString(command)
+		buf.WriteByte(reqSep[0])
+		buf.WriteString(params[0])
+
+		if buf.Len() > bufSize {
+			return nil, bufErr()
 		}
 	default:
 		// Add [[BATCH]] to the buffer
@@ -77,20 +86,15 @@ func prepareRequests(command string, params []string, jsonResp bool) (requests [
 			// header and separators
 			cmdLen := len(command) + len(param) + len(reqSep)
 			if jsonResp {
-				cmdLen += len(reqHeader)
+				cmdLen += len(jsonReqHeader)
 			}
 
 			// If batch + command length is bigger than bufSize,
 			// return an error since it will not fit the socket
 			if len(batch)+cmdLen > bufSize {
-				return nil, fmt.Errorf(
-					"command is too long (%d>=%d): %s%s %s;",
-					len(batch)+cmdLen,
-					bufSize,
-					batch,
-					command,
-					param,
-				)
+				// Call prepare request for error
+				prepareRequest(buf, command, param, jsonResp)
+				return nil, bufErr()
 			}
 
 			// If the current length of the buffer + command +
@@ -105,6 +109,7 @@ func prepareRequests(command string, params []string, jsonResp bool) (requests [
 				buf.Reset()
 				buf.WriteString(batch)
 			}
+
 			// Add the contents of the request to the buffer
 			curLen = prepareRequest(buf, command, param, jsonResp)
 		}

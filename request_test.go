@@ -124,12 +124,12 @@ func TestPrepareRequestsError(t *testing.T) {
 		paramsLen   int
 		jsonResp    bool
 	}{
-		{bufSize - len(reqHeader), 0, true},                                // '/j<command>'
-		{bufSize - len(reqHeader) - 2, 1, true},                            // '/j<command> p'
-		{bufSize - len(reqHeader) - len(batch) - len(reqSep) - 1, 2, true}, // '[[BATCH]]/j<command> p;'
-		{bufSize, 0, false},                                                // '<command>'
-		{bufSize - 2, 1, false},                                            // '<command> p'
-		{bufSize - len(batch) - len(reqSep) - 1, 2, false},                 // '[[BATCH]]<command> p;'
+		{bufSize - len(jsonReqHeader), 0, true},                                // '/j<command>'
+		{bufSize - len(jsonReqHeader) - 2, 1, true},                            // '/j<command> p'
+		{bufSize - len(jsonReqHeader) - len(batch) - len(reqSep) - 1, 2, true}, // '[[BATCH]]/j<command> p;'
+		{bufSize, 0, false},                                // '<command>'
+		{bufSize - 2, 1, false},                            // '<command> p'
+		{bufSize - len(batch) - len(reqSep) - 1, 2, false}, // '[[BATCH]]<command> p;'
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("tests_%d-%d-%v", tt.lastSafeLen, tt.paramsLen, tt.jsonResp), func(t *testing.T) {
