@@ -70,7 +70,7 @@ func (c *EventClient) Receive(ctx context.Context) ([]ReceivedData, error) {
 		}
 
 		split := strings.Split(event, sep)
-		if split[0] == "" || split[1] == "" || split[1] == "," {
+		if len(split) < 2 || split[0] == "" || split[1] == "" || split[1] == "," {
 			continue
 		}
 

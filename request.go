@@ -34,6 +34,7 @@ func prepareRequest(buf *bytes.Buffer, command string, param string) int {
 	return buf.Len()
 }
 
+// TODO: add jsonResponse parameter here to allow us to append or not 'j/'
 func prepareRequests(command string, params []string) (requests []RawRequest, err error) {
 	if command == "" {
 		// Panic since this is not supposed to happen, i.e.: only by
