@@ -1,6 +1,7 @@
 package hyprland
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -218,8 +219,7 @@ func TestValidateResponse(t *testing.T) {
 			assert.DeepEqual(t, response, tt.want)
 			if tt.wantErr {
 				assert.Error(t, err)
-				_, ok := err.(ValidationError)
-				assert.True(t, ok)
+				assert.True(t, errors.Is(err, ErrorValidation))
 			} else {
 				assert.NoError(t, err)
 			}

@@ -1,6 +1,9 @@
 package hyprland
 
-import "net"
+import (
+	"errors"
+	"net"
+)
 
 // Indicates the version where the structs are up-to-date.
 const HYPRLAND_VERSION = "0.42.0"
@@ -19,14 +22,10 @@ type RequestClient struct {
 	conn *net.UnixAddr
 }
 
-// ValidationError is used to return errors from response validation. In some
-// cases you may want to ignore those errors, in this case you type check this
-// kind of error and ignore it.
-type ValidationError string
-
-func (v ValidationError) Error() string {
-	return string(v)
-}
+// ErrorValidation is used to return errors from response validation. In some
+// cases you may want to ignore those errors, in this case you can use
+// [errors.Is] to compare the errors returned with this type.
+var ErrorValidation = errors.New("validation error")
 
 // Unmarshal structs for requests.
 // Try to keep struct fields in the same order as the output for `hyprctl -j`
