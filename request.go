@@ -254,15 +254,14 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 
 	// Connect to the request socket
 	conn, err := net.DialUnix("unix", nil, c.conn)
-	defer func() {
-		if e := conn.Close(); e != nil {
-			err = fmt.Errorf("error while closing socket: %w", e)
-		}
-	}()
-
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to socket: %w", err)
 	}
+	defer func() {
+		if e := conn.Close(); e != nil {
+			err = errors.Join(err, fmt.Errorf("error while closing socket: %w", e))
+		}
+	}()
 
 	// Send the request to the socket
 	if len(request) > bufSize {
