@@ -51,9 +51,9 @@ func mustMarshalIndent(v any) []byte {
 }
 
 func usage(m map[string]func(args []string)) {
-	fmt.Fprintf(out, "Usage of %s:\n", os.Args[0])
-	fmt.Fprintf(out, "  %s [subcommand] <options>\n\n", os.Args[0])
-	fmt.Fprintf(out, "Available subcommands:\n")
+	must1(fmt.Fprintf(out, "Usage of %s:\n", os.Args[0]))
+	must1(fmt.Fprintf(out, "  %s [subcommand] <options>\n\n", os.Args[0]))
+	must1(fmt.Fprintf(out, "Available subcommands:\n"))
 
 	// Sort keys before printing, since Go randomises order
 	subcommands := make([]string, len(m))
@@ -64,7 +64,7 @@ func usage(m map[string]func(args []string)) {
 	}
 	sort.Strings(subcommands)
 	for _, s := range subcommands {
-		fmt.Fprintf(out, "  - %s\n", s)
+		must1(fmt.Fprintf(out, "  - %s\n", s))
 	}
 }
 
@@ -88,16 +88,16 @@ func main() {
 	m := map[string]func(args []string){
 		"activewindow": func(_ []string) {
 			v := must1(c.ActiveWindow())
-			fmt.Printf("%s\n", mustMarshalIndent(v))
+			must1(fmt.Printf("%s\n", mustMarshalIndent(v)))
 		},
 		"activeworkspace": func(_ []string) {
 			v := must1(c.ActiveWorkspace())
-			fmt.Printf("%s\n", mustMarshalIndent(v))
+			must1(fmt.Printf("%s\n", mustMarshalIndent(v)))
 		},
 		"batch": func(args []string) {
-			batchFS.Parse(args)
+			must(batchFS.Parse(args))
 			if len(batch) == 0 {
-				fmt.Fprintf(out, "Error: at least one '-c' is required for batch.\n")
+				must1(fmt.Fprintf(out, "Error: at least one '-c' is required for batch.\n"))
 				os.Exit(1)
 			} else {
 				// Batch commands are done in the following way:
@@ -106,35 +106,35 @@ func main() {
 					fmt.Sprintf("[[BATCH]]%s", strings.Join(batch, ";")),
 				)
 				v := must1(c.RawRequest(r))
-				fmt.Printf("%s\n", v)
+				must1(fmt.Printf("%s\n", v))
 			}
 		},
 		"dispatch": func(args []string) {
-			dispatchFS.Parse(args)
+			must(dispatchFS.Parse(args))
 			if len(dispatch) == 0 {
-				fmt.Fprintf(out, "Error: at least one '-c' is required for dispatch.\n")
+				must1(fmt.Fprintf(out, "Error: at least one '-c' is required for dispatch.\n"))
 				os.Exit(1)
 			} else {
 				v := must1(c.Dispatch(dispatch...))
-				fmt.Printf("%s\n", v)
+				must1(fmt.Printf("%s\n", v))
 			}
 		},
 		"kill": func(_ []string) {
 			v := must1(c.Kill())
-			fmt.Printf("%s\n", v)
+			must1(fmt.Printf("%s\n", v))
 		},
 		"reload": func(_ []string) {
 			v := must1(c.Reload())
-			fmt.Printf("%s\n", v)
+			must1(fmt.Printf("%s\n", v))
 		},
 		"setcursor": func(_ []string) {
-			setcursorFS.Parse(os.Args[2:])
+			must(setcursorFS.Parse(os.Args[2:]))
 			v := must1(c.SetCursor(*theme, *size))
-			fmt.Printf("%s\n", v)
+			must1(fmt.Printf("%s\n", v))
 		},
 		"version": func(_ []string) {
 			v := must1(c.Version())
-			fmt.Printf("%s\n", mustMarshalIndent(v))
+			must1(fmt.Printf("%s\n", mustMarshalIndent(v)))
 		},
 	}
 
@@ -151,7 +151,7 @@ func main() {
 		c = hyprland.MustClient()
 		run(os.Args[2:])
 	} else {
-		fmt.Fprintf(out, "Error: unknown subcommand: %s\n", subcommand)
+		must1(fmt.Fprintf(out, "Error: unknown subcommand: %s\n", subcommand))
 		os.Exit(1)
 	}
 }
