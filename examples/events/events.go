@@ -13,6 +13,12 @@ type ev struct {
 	event.DefaultEventHandler
 }
 
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (e *ev) Workspace(w event.WorkspaceName) {
 	fmt.Printf("Workspace: %+v\n", w)
 }
@@ -29,15 +35,15 @@ func main() {
 	defer cancel()
 
 	c := event.MustClient()
-	defer c.Close()
+	defer must(c.Close())
 
 	// Will listen for events for 5 seconds and exit
-	c.Subscribe(
+	must(c.Subscribe(
 		ctx,
 		&ev{},
 		event.EventWorkspace,
 		event.EventActiveWindow,
-	)
+	))
 
 	fmt.Println("Bye!")
 }

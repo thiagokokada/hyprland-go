@@ -28,12 +28,12 @@ func main() {
 
 	aWindow := must1(client.ActiveWindow())
 	if len(aWindow.Grouped) > 0 {
-		client.Dispatch(
+		must1(client.Dispatch(
 			// If we are already in a group, ungroup
 			"togglegroup",
 			// Make the current window as master (when using master layout)
 			"layoutmsg swapwithmaster master",
-		)
+		))
 	} else {
 		var cmdbuf []string
 		aWorkspace := must1(client.ActiveWorkspace())
