@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -95,10 +96,8 @@ func (c *EventClient) Subscribe(ctx context.Context, ev EventHandler, events ...
 	}
 }
 
-func readWithContext(ctx context.Context, conn net.Conn, buf []byte) (int, error) {
+func readWithContext(ctx context.Context, conn net.Conn, buf []byte) (n int, err error) {
 	done := make(chan struct{})
-	var n int
-	var err error
 
 	// Start a goroutine to perform the read
 	go func() {
@@ -111,12 +110,19 @@ func readWithContext(ctx context.Context, conn net.Conn, buf []byte) (int, error
 		return n, err
 	case <-ctx.Done():
 		// Set a short deadline to unblock the Read()
-		conn.SetReadDeadline(time.Now())
+		err = conn.SetReadDeadline(time.Now())
+		if err != nil {
+			return 0, err
+		}
 		// Reset read deadline
-		defer conn.SetReadDeadline(time.Time{})
+		defer func() {
+			if e := conn.SetReadDeadline(time.Time{}); e != nil {
+				err = errors.Join(err, e)
+			}
+		}()
 		// Make sure that the goroutine is done to avoid leaks
 		<-done
-		return 0, ctx.Err()
+		return 0, errors.Join(err, ctx.Err())
 	}
 }
 
