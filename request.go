@@ -278,7 +278,10 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 	if err != nil {
 		return nil, fmt.Errorf("error while writing to socket: %w", err)
 	}
-	writer.Flush()
+	err = writer.Flush()
+	if err != nil {
+		return nil, fmt.Errorf("error while flushing to socket: %w", err)
+	}
 
 	// Get the response back
 	rbuf := bytes.NewBuffer(nil)
