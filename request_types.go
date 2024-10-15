@@ -6,7 +6,7 @@ import (
 )
 
 // Indicates the version where the structs are up-to-date.
-const HYPRLAND_VERSION = "0.42.0"
+const HYPRLAND_VERSION = "0.44.1"
 
 // Represents a raw request that is passed for Hyprland's socket.
 type RawRequest []byte
