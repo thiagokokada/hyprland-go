@@ -457,7 +457,7 @@ func (c *RequestClient) Layers() (l Layers, err error) {
 // Monitors command, similar to 'hyprctl monitors'.
 // Returns a [Monitor] object.
 func (c *RequestClient) Monitors() (m []Monitor, err error) {
-	response, err := c.doRequest("monitors", nil, true)
+	response, err := c.doRequest("monitors all", nil, true)
 	if err != nil {
 		return m, err
 	}
