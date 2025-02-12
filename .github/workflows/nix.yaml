@@ -14,8 +14,6 @@ jobs:
 
     - uses: DeterminateSystems/nix-installer-action@main
 
-    - uses: DeterminateSystems/magic-nix-cache-action@main
-
     - name: build package
       run: nix build -L
 
