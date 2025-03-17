@@ -26,14 +26,13 @@ jobs:
     - name: Vet
       run: go vet -v ./...
 
-    - name: Staticcheck
-      run: go run honnef.co/go/tools/cmd/staticcheck@2023.1.7 ./...
-
-    - name: Errcheck
-      run: go run github.com/kisielk/errcheck@v1.7.0 -ignoretests ./...
-
     - name: Build
       run: go build -v ./...
 
     - name: Test
       run: go test -bench=. -short -v ./...
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: v1.64
