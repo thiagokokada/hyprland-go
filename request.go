@@ -382,6 +382,11 @@ func (c *RequestClient) Decorations(regex string) (d []Decoration, err error) {
 	if err != nil {
 		return d, err
 	}
+	// XXX: when no decoration is set, we get "none".
+	// Is this something that also happen in other commands?
+	if string(response) == "none" {
+		return nil, nil
+	}
 	return unmarshalResponse(response, &d)
 }
 
