@@ -171,9 +171,10 @@ type Monitor struct {
 }
 
 type Option struct {
-	Option string `json:"option"`
-	Int    int    `json:"int"`
-	Set    bool   `json:"set"`
+	Option string  `json:"option"`
+	Int    int     `json:"int"`
+	Float  float64 `json:"float"`
+	Set    bool    `json:"set"`
 }
 
 type Version struct {

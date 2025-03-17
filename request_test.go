@@ -331,6 +331,7 @@ func TestGetOption(t *testing.T) {
 		{"general:border_size"},
 		{"gestures:workspace_swipe"},
 		{"misc:vrr"},
+		{"cursor:zoom_factor"},
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("mass_tests_%v", tt.option), func(t *testing.T) {
