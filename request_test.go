@@ -26,20 +26,25 @@ func genParams(param string, n int) (params []string) {
 }
 
 func checkEnvironment(t *testing.T) {
+	t.Helper()
+
 	if c == nil {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
 }
 
 func testCommandR(t *testing.T, command func() (Response, error)) {
+	t.Helper()
 	testCommand(t, command, "")
 }
 
 func testCommandRs(t *testing.T, command func() ([]Response, error)) {
+	t.Helper()
 	testCommand(t, command, []Response{})
 }
 
 func testCommand[T any](t *testing.T, command func() (T, error), emptyValue any) {
+	t.Helper()
 	checkEnvironment(t)
 
 	got, err := command()
