@@ -37,6 +37,7 @@ func NewClient(socket string) (*EventClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to socket: %w", err)
 	}
+
 	return &EventClient{conn: conn}, err
 }
 
@@ -46,6 +47,7 @@ func (c *EventClient) Close() error {
 	if err != nil {
 		return fmt.Errorf("error while closing socket: %w", err)
 	}
+
 	return err
 }
 
@@ -62,6 +64,7 @@ func (c *EventClient) Receive(ctx context.Context) ([]ReceivedData, error) {
 	buf = buf[:n]
 
 	var recv []ReceivedData
+
 	raw := strings.Split(string(buf), "\n")
 	for _, event := range raw {
 		if event == "" {
@@ -100,6 +103,7 @@ func readWithContext(ctx context.Context, conn net.Conn, buf []byte) (n int, err
 	// Start a goroutine to perform the read
 	go func() {
 		n, err = conn.Read(buf)
+
 		close(done)
 	}()
 
@@ -120,6 +124,7 @@ func readWithContext(ctx context.Context, conn net.Conn, buf []byte) (n int, err
 		}()
 		// Make sure that the goroutine is done to avoid leaks
 		<-done
+
 		return 0, errors.Join(err, ctx.Err())
 	}
 }
@@ -140,6 +145,7 @@ func receiveAndProcessEvent(ctx context.Context, c eventClient, ev EventHandler,
 func processEvent(ev EventHandler, msg ReceivedData, events []EventType) {
 	for _, event := range events {
 		raw := strings.Split(string(msg.Data), ",")
+
 		if msg.Type == event {
 			switch event {
 			case EventWorkspace:

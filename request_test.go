@@ -21,6 +21,7 @@ func genParams(param string, n int) (params []string) {
 	for i := 0; i < n; i++ {
 		params = append(params, param)
 	}
+
 	return params
 }
 
@@ -40,6 +41,7 @@ func testCommandRs(t *testing.T, command func() ([]Response, error)) {
 
 func testCommand[T any](t *testing.T, command func() (T, error), emptyValue any) {
 	checkEnvironment(t)
+
 	got, err := command()
 	assert.NoError(t, err)
 	assert.DeepNotEqual(t, got, emptyValue)
@@ -63,7 +65,9 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 
 	setup()
+
 	exitCode := m.Run()
+
 	teardown()
 
 	os.Exit(exitCode)
@@ -88,6 +92,7 @@ func TestPrepareRequests(t *testing.T) {
 		t.Run(fmt.Sprintf("tests_%s-%s-%v", tt.command, tt.params, tt.jsonResp), func(t *testing.T) {
 			requests, err := prepareRequests(tt.command, tt.params, tt.jsonResp)
 			assert.NoError(t, err)
+
 			for i, e := range tt.expected {
 				assert.Equal(t, string(requests[i]), e)
 			}
@@ -178,6 +183,7 @@ func TestParseResponse(t *testing.T) {
 			response, err := parseResponse(tt.response)
 			assert.NoError(t, err)
 			assert.Equal(t, len(response), tt.want)
+
 			for _, r := range response {
 				assert.Equal(t, r, "ok")
 			}
@@ -217,6 +223,7 @@ func TestValidateResponse(t *testing.T) {
 		t.Run(fmt.Sprintf("tests_%v-%v", tt.params, tt.response), func(t *testing.T) {
 			response, err := validateResponse(tt.params, tt.response)
 			assert.DeepEqual(t, response, tt.want)
+
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, ErrorValidation))
@@ -263,6 +270,7 @@ func TestCursorPos(t *testing.T) {
 		// https://github.com/hyprwm/Hyprland/discussions/1257
 		t.Skip("skip test that always returns CursorPos{X:0, Y:0} in CI since we can't move cursor")
 	}
+
 	testCommand(t, c.CursorPos, CursorPos{})
 }
 
@@ -270,6 +278,7 @@ func TestDecorations(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test that depends in kitty running")
 	}
+
 	testCommand(t, func() ([]Decoration, error) {
 		return c.Decorations("kitty")
 	}, []Decoration{})
@@ -296,7 +305,9 @@ func TestDispatch(t *testing.T) {
 	// batch commands is working as expected.
 	// See also: prepareRequests function and MAX_COMMANDS const
 	const want = 35
+
 	const retries = 15
+
 	t.Run(fmt.Sprintf("test_opening_%d_kitty_instances", want), func(t *testing.T) {
 		_, err := c.Dispatch(genParams(fmt.Sprintf("exec kitty sh -c 'sleep %d && exit 0'", retries), want)...)
 		assert.NoError(t, err)
@@ -307,7 +318,9 @@ func TestDispatch(t *testing.T) {
 		got := 0
 		for i := 0; i < retries; i++ {
 			got = 0
+
 			time.Sleep(1 * time.Second)
+
 			cls, err := c.Clients()
 			assert.NoError(t, err)
 
@@ -316,8 +329,10 @@ func TestDispatch(t *testing.T) {
 					got += 1
 				}
 			}
+
 			if got >= want {
 				t.Logf("after retries: %d, got kitty: %d, finishing test", i+1, got)
+
 				return
 			}
 		}
@@ -352,6 +367,7 @@ func TestKill(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test that kill window")
 	}
+
 	testCommandR(t, c.Kill)
 }
 
@@ -367,6 +383,7 @@ func TestReload(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test that reload config")
 	}
+
 	testCommandR(t, c.Reload)
 }
 
@@ -379,6 +396,7 @@ func TestSetCursor(t *testing.T) {
 func TestSwitchXkbLayout(t *testing.T) {
 	// Need to find a keyboard, call Devices()
 	checkEnvironment(t)
+
 	devices, err := c.Devices()
 	assert.NoError(t, err)
 
@@ -395,6 +413,7 @@ func BenchmarkSplash(b *testing.B) {
 	if c == nil {
 		b.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
+
 	for i := 0; i < b.N; i++ {
 		c.Splash()
 	}

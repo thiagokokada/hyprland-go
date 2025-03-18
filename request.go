@@ -21,8 +21,10 @@ const (
 	bufSize = 8192
 )
 
-var jsonReqHeader = []byte{'j', '/'}
-var reqSep = []byte{' ', ';'}
+var (
+	jsonReqHeader = []byte{'j', '/'}
+	reqSep        = []byte{' ', ';'}
+)
 
 // Initiate a new client or panic.
 // This should be the preferred method for user scripts, since it will
@@ -64,6 +66,7 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 	if err != nil {
 		return nil, fmt.Errorf("error while connecting to socket: %w", err)
 	}
+
 	defer func() {
 		if e := conn.Close(); e != nil {
 			err = errors.Join(err, fmt.Errorf("error while closing socket: %w", e))
@@ -81,10 +84,12 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 	}
 
 	writer := bufio.NewWriter(conn)
+
 	_, err = writer.Write(request)
 	if err != nil {
 		return nil, fmt.Errorf("error while writing to socket: %w", err)
 	}
+
 	err = writer.Flush()
 	if err != nil {
 		return nil, fmt.Errorf("error while flushing to socket: %w", err)
@@ -94,16 +99,19 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 	rbuf := bytes.NewBuffer(nil)
 	sbuf := make([]byte, bufSize)
 	reader := bufio.NewReader(conn)
+
 	for {
 		n, err := reader.Read(sbuf)
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
+
 			return nil, fmt.Errorf("error while reading from socket: %w", err)
 		}
 
 		rbuf.Write(sbuf[:n])
+
 		if n < bufSize {
 			break
 		}
@@ -119,6 +127,7 @@ func (c *RequestClient) ActiveWindow() (w Window, err error) {
 	if err != nil {
 		return w, err
 	}
+
 	return unmarshalResponse(response, &w)
 }
 
@@ -129,6 +138,7 @@ func (c *RequestClient) ActiveWorkspace() (w Workspace, err error) {
 	if err != nil {
 		return w, err
 	}
+
 	return unmarshalResponse(response, &w)
 }
 
@@ -139,6 +149,7 @@ func (c *RequestClient) Animations() (a [][]Animation, err error) {
 	if err != nil {
 		return a, err
 	}
+
 	return unmarshalResponse(response, &a)
 }
 
@@ -149,6 +160,7 @@ func (c *RequestClient) Binds() (b []Bind, err error) {
 	if err != nil {
 		return b, err
 	}
+
 	return unmarshalResponse(response, &b)
 }
 
@@ -159,6 +171,7 @@ func (c *RequestClient) Clients() (cl []Client, err error) {
 	if err != nil {
 		return cl, err
 	}
+
 	return unmarshalResponse(response, &cl)
 }
 
@@ -169,6 +182,7 @@ func (c *RequestClient) ConfigErrors() (ce []ConfigError, err error) {
 	if err != nil {
 		return ce, err
 	}
+
 	return unmarshalResponse(response, &ce)
 }
 
@@ -179,6 +193,7 @@ func (c *RequestClient) CursorPos() (cu CursorPos, err error) {
 	if err != nil {
 		return cu, err
 	}
+
 	return unmarshalResponse(response, &cu)
 }
 
@@ -194,6 +209,7 @@ func (c *RequestClient) Decorations(regex string) (d []Decoration, err error) {
 	if string(response) == "none" {
 		return nil, nil
 	}
+
 	return unmarshalResponse(response, &d)
 }
 
@@ -204,6 +220,7 @@ func (c *RequestClient) Devices() (d Devices, err error) {
 	if err != nil {
 		return d, err
 	}
+
 	return unmarshalResponse(response, &d)
 }
 
@@ -217,6 +234,7 @@ func (c *RequestClient) Dispatch(params ...string) (r []Response, err error) {
 	if err != nil {
 		return r, err
 	}
+
 	return parseAndValidateResponse(params, raw)
 }
 
@@ -227,6 +245,7 @@ func (c *RequestClient) GetOption(name string) (o Option, err error) {
 	if err != nil {
 		return o, err
 	}
+
 	return unmarshalResponse(response, &o)
 }
 
@@ -240,6 +259,7 @@ func (c *RequestClient) Keyword(params ...string) (r []Response, err error) {
 	if err != nil {
 		return r, err
 	}
+
 	return parseAndValidateResponse(params, raw)
 }
 
@@ -252,7 +272,9 @@ func (c *RequestClient) Kill() (r Response, err error) {
 	if err != nil {
 		return r, err
 	}
+
 	response, err := parseAndValidateResponse(nil, raw)
+
 	return response[0], err // should return only one response
 }
 
@@ -263,6 +285,7 @@ func (c *RequestClient) Layers() (l Layers, err error) {
 	if err != nil {
 		return l, err
 	}
+
 	return unmarshalResponse(response, &l)
 }
 
@@ -273,6 +296,7 @@ func (c *RequestClient) Monitors() (m []Monitor, err error) {
 	if err != nil {
 		return m, err
 	}
+
 	return unmarshalResponse(response, &m)
 }
 
@@ -283,7 +307,9 @@ func (c *RequestClient) Reload() (r Response, err error) {
 	if err != nil {
 		return r, err
 	}
+
 	response, err := parseAndValidateResponse(nil, raw)
+
 	return response[0], err // should return only one response
 }
 
@@ -294,7 +320,9 @@ func (c *RequestClient) SetCursor(theme string, size int) (r Response, err error
 	if err != nil {
 		return r, err
 	}
+
 	response, err := parseAndValidateResponse(nil, raw)
+
 	return response[0], err // should return only one response
 }
 
@@ -306,7 +334,9 @@ func (c *RequestClient) SwitchXkbLayout(device string, cmd string) (r Response, 
 	if err != nil {
 		return r, err
 	}
+
 	response, err := parseAndValidateResponse(nil, raw)
+
 	return response[0], err // should return only one response
 }
 
@@ -316,6 +346,7 @@ func (c *RequestClient) Splash() (s string, err error) {
 	if err != nil {
 		return s, err
 	}
+
 	return string(response), nil
 }
 
@@ -326,6 +357,7 @@ func (c *RequestClient) Version() (v Version, err error) {
 	if err != nil {
 		return v, err
 	}
+
 	return unmarshalResponse(response, &v)
 }
 
@@ -336,6 +368,7 @@ func (c *RequestClient) Workspaces() (w []Workspace, err error) {
 	if err != nil {
 		return w, err
 	}
+
 	return unmarshalResponse(response, &w)
 }
 
@@ -343,6 +376,7 @@ func prepareRequest(buf *bytes.Buffer, command string, param string, jsonResp bo
 	if jsonResp {
 		buf.Write(jsonReqHeader)
 	}
+
 	buf.WriteString(command)
 	buf.WriteByte(reqSep[0])
 	buf.WriteString(param)
@@ -374,6 +408,7 @@ func prepareRequests(command string, params []string, jsonResp bool) (requests [
 		if jsonResp {
 			buf.Write(jsonReqHeader)
 		}
+
 		buf.WriteString(command)
 
 		if buf.Len() > bufSize {
@@ -383,6 +418,7 @@ func prepareRequests(command string, params []string, jsonResp bool) (requests [
 		if jsonResp {
 			buf.Write(jsonReqHeader)
 		}
+
 		buf.WriteString(command)
 		buf.WriteByte(reqSep[0])
 		buf.WriteString(params[0])
@@ -409,6 +445,7 @@ func prepareRequests(command string, params []string, jsonResp bool) (requests [
 			if len(batch)+cmdLen > bufSize {
 				// Call prepare request for error
 				prepareRequest(buf, command, param, jsonResp)
+
 				return nil, bufErr()
 			}
 
@@ -445,6 +482,7 @@ func parseResponse(raw RawResponse) (response []Response, err error) {
 		if resp == "" {
 			continue
 		}
+
 		response = append(response, Response(resp))
 	}
 
@@ -495,6 +533,7 @@ func parseAndValidateResponse(params []string, raw RawResponse) ([]Response, err
 	if err != nil {
 		return response, err
 	}
+
 	return validateResponse(params, response)
 }
 
@@ -511,6 +550,7 @@ func unmarshalResponse[T any](response RawResponse, v *T) (T, error) {
 			response,
 		)
 	}
+
 	return *v, nil
 }
 
@@ -521,14 +561,15 @@ func (c *RequestClient) doRequest(command string, params []string, jsonResp bool
 	}
 
 	buf := bytes.NewBuffer(nil)
+
 	for _, req := range requests {
 		resp, err := c.RawRequest(req)
 		if err != nil {
 			return nil, fmt.Errorf("error while doing request: %w", err)
 		}
+
 		buf.Write(resp)
 	}
 
 	return buf.Bytes(), nil
 }
-
