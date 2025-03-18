@@ -63,7 +63,7 @@ func (c *EventClient) Receive(ctx context.Context) ([]ReceivedData, error) {
 
 	buf = buf[:n]
 
-	var recv []ReceivedData
+	var recv []ReceivedData //nolint:prealloc
 
 	raw := strings.Split(string(buf), "\n")
 	for _, event := range raw {

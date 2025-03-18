@@ -14,16 +14,11 @@ import (
 	"github.com/thiagokokada/hyprland-go/internal/assert"
 )
 
-const (
-	// https://github.com/hyprwm/Hyprland/blob/918d8340afd652b011b937d29d5eea0be08467f5/hyprctl/main.cpp#L278
-	batch = "[[BATCH]]"
-	// https://github.com/hyprwm/Hyprland/blob/918d8340afd652b011b937d29d5eea0be08467f5/hyprctl/main.cpp#L257
-	bufSize = 8192
-)
-
 var (
-	jsonReqHeader = []byte{'j', '/'}
-	reqSep        = []byte{' ', ';'}
+	ErrorCommandTooLong = errors.New("command is too long")
+	ErrorEmptyRequest   = errors.New("empty request")
+	ErrorEmptyResponse  = errors.New("empty response")
+	ErrorRequestTooBig  = errors.New("request too big")
 )
 
 // Initiate a new client or panic.
@@ -58,7 +53,7 @@ func NewClient(socket string) *RequestClient {
 // response will generally be something different from "ok".
 func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, err error) {
 	if len(request) == 0 {
-		return nil, errors.New("empty request")
+		return nil, ErrorEmptyRequest
 	}
 
 	// Connect to the request socket
@@ -76,7 +71,8 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 	// Send the request to the socket
 	if len(request) > bufSize {
 		return nil, fmt.Errorf(
-			"request too big (%d>%d): %s",
+			"%w (%d>%d): %s",
+			ErrorRequestTooBig,
 			len(request),
 			bufSize,
 			request,
@@ -372,6 +368,18 @@ func (c *RequestClient) Workspaces() (w []Workspace, err error) {
 	return unmarshalResponse(response, &w)
 }
 
+const (
+	// https://github.com/hyprwm/Hyprland/blob/918d8340afd652b011b937d29d5eea0be08467f5/hyprctl/main.cpp#L278
+	batch = "[[BATCH]]"
+	// https://github.com/hyprwm/Hyprland/blob/918d8340afd652b011b937d29d5eea0be08467f5/hyprctl/main.cpp#L257
+	bufSize = 8192
+)
+
+var (
+	jsonReqHeader = []byte{'j', '/'}
+	reqSep        = []byte{' ', ';'}
+)
+
 func prepareRequest(buf *bytes.Buffer, command string, param string, jsonResp bool) int {
 	if jsonResp {
 		buf.Write(jsonReqHeader)
@@ -396,7 +404,8 @@ func prepareRequests(command string, params []string, jsonResp bool) (requests [
 	buf := bytes.NewBuffer(nil)
 	bufErr := func() error {
 		return fmt.Errorf(
-			"command is too long (%d>=%d): %s",
+			"%w (%d>=%d): %s",
+			ErrorCommandTooLong,
 			buf.Len(),
 			bufSize,
 			buf.String(),
@@ -539,7 +548,7 @@ func parseAndValidateResponse(params []string, raw RawResponse) ([]Response, err
 
 func unmarshalResponse[T any](response RawResponse, v *T) (T, error) {
 	if len(response) == 0 {
-		return *v, errors.New("empty response")
+		return *v, ErrorEmptyResponse
 	}
 
 	err := json.Unmarshal(response, &v)
