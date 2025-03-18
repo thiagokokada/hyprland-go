@@ -33,6 +33,7 @@ func TestReceive(t *testing.T) {
 	// Generate an event
 	go func() {
 		c := hyprland.MustClient()
+
 		time.Sleep(100 * time.Millisecond)
 		c.Dispatch("exec kitty sh -c 'echo Testing hyprland-go events && sleep 1'")
 	}()
@@ -44,6 +45,7 @@ func TestReceive(t *testing.T) {
 	// We must capture the event
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(data), 1)
+
 	for _, d := range data {
 		assert.NotEqual(t, string(d.Data), "")
 		assert.NotEqual(t, string(d.Type), "")
@@ -54,6 +56,7 @@ func TestSubscribe(t *testing.T) {
 	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") == "" {
 		t.Skip("HYPRLAND_INSTANCE_SIGNATURE not set, skipping test")
 	}
+
 	c := MustClient()
 	defer c.Close()
 
@@ -65,6 +68,7 @@ func TestSubscribe(t *testing.T) {
 	)
 
 	err := c.Subscribe(ctx, &DefaultEventHandler{}, AllEvents...)
+
 	cancel()
 
 	assert.Error(t, err)
@@ -72,7 +76,7 @@ func TestSubscribe(t *testing.T) {
 
 	// Make sure that we can call Subscribe again it can still be used,
 	// e.g.: the conn read deadline is not set otherwise it will exit
-	// immediatelly
+	// immediately
 	ctx, cancel = context.WithCancel(context.Background())
 	go func() {
 		time.Sleep(100 * time.Millisecond)
@@ -257,6 +261,7 @@ func BenchmarkReceive(b *testing.B) {
 	// Make sure the socket exist
 	for i := 0; i < 10; i++ {
 		time.Sleep(100 * time.Millisecond)
+
 		if _, err := os.Stat(socketPath); err != nil {
 			break
 		}
@@ -269,6 +274,7 @@ func BenchmarkReceive(b *testing.B) {
 
 	// Reset setup time
 	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		c.Receive(ctx)
 	}
@@ -291,10 +297,12 @@ func RandomBytes(n int) []byte {
 		if remain == 0 {
 			cache, remain = rand.Int63(), letterIdxMax
 		}
+
 		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
 			b[i] = letterBytes[idx]
 			i--
 		}
+
 		cache >>= letterIdxBits
 		remain--
 	}
@@ -319,6 +327,7 @@ func RandomStringServer() {
 		if err != nil {
 			panic(err)
 		}
+
 		writer := bufio.NewWriter(conn)
 
 		go func(c net.Conn) {

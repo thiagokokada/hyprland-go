@@ -8,6 +8,7 @@ import (
 
 func Must1[T any](v T, err error) T {
 	Must(err)
+
 	return v
 }
 
@@ -19,6 +20,7 @@ func Must(err error) {
 
 func Error(t *testing.T, err error) {
 	t.Helper()
+
 	if err == nil {
 		t.Errorf("got: %#v, want: !nil", err)
 	}
@@ -26,6 +28,7 @@ func Error(t *testing.T, err error) {
 
 func NoError(t *testing.T, err error) {
 	t.Helper()
+
 	if err != nil {
 		t.Errorf("got: %#v, want: nil", err)
 	}
@@ -33,6 +36,7 @@ func NoError(t *testing.T, err error) {
 
 func DeepEqual(t *testing.T, got, want any) {
 	t.Helper()
+
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got: %#v, want: %#v", got, want)
 	}
@@ -40,6 +44,7 @@ func DeepEqual(t *testing.T, got, want any) {
 
 func DeepNotEqual(t *testing.T, got, want any) {
 	t.Helper()
+
 	if reflect.DeepEqual(got, want) {
 		t.Errorf("got: %#v, want: !%#v", got, want)
 	}
@@ -47,6 +52,7 @@ func DeepNotEqual(t *testing.T, got, want any) {
 
 func Equal[T comparable](t *testing.T, got, want T) {
 	t.Helper()
+
 	if got != want {
 		t.Errorf("got: %#v, want: %#v", got, want)
 	}
@@ -54,6 +60,7 @@ func Equal[T comparable](t *testing.T, got, want T) {
 
 func NotEqual[T comparable](t *testing.T, got, want T) {
 	t.Helper()
+
 	if got == want {
 		t.Errorf("got: %#v, want: !%#v", got, want)
 	}
@@ -61,6 +68,7 @@ func NotEqual[T comparable](t *testing.T, got, want T) {
 
 func False(t *testing.T, got bool) {
 	t.Helper()
+
 	if got {
 		t.Errorf("got: %#v, want: false", got)
 	}
@@ -68,6 +76,7 @@ func False(t *testing.T, got bool) {
 
 func True(t *testing.T, got bool) {
 	t.Helper()
+
 	if !got {
 		t.Errorf("got: %#v, want: true", got)
 	}
@@ -75,6 +84,7 @@ func True(t *testing.T, got bool) {
 
 func GreaterOrEqual[T cmp.Ordered](t *testing.T, got, want T) {
 	t.Helper()
+
 	if !(got >= want) {
 		t.Errorf("got: %#v, want: >=%#v", got, want)
 	}
@@ -82,6 +92,7 @@ func GreaterOrEqual[T cmp.Ordered](t *testing.T, got, want T) {
 
 func Greater[T cmp.Ordered](t *testing.T, got, want T) {
 	t.Helper()
+
 	if !(got > want) {
 		t.Errorf("got: %#v, want: >%#v", got, want)
 	}
@@ -89,6 +100,7 @@ func Greater[T cmp.Ordered](t *testing.T, got, want T) {
 
 func LessOrEqual[T cmp.Ordered](t *testing.T, got, want T) {
 	t.Helper()
+
 	if !(got <= want) {
 		t.Errorf("got: %#v, want: <=%#v", got, want)
 	}
@@ -96,6 +108,7 @@ func LessOrEqual[T cmp.Ordered](t *testing.T, got, want T) {
 
 func Less[T cmp.Ordered](t *testing.T, got, want T) {
 	t.Helper()
+
 	if !(got < want) {
 		t.Errorf("got: %#v, want: <%#v", got, want)
 	}

@@ -12,7 +12,7 @@ type EventClient struct {
 
 // Event Client interface, right now only used for testing.
 type eventClient interface {
-	Receive(context.Context) ([]ReceivedData, error)
+	Receive(_ context.Context) ([]ReceivedData, error)
 }
 
 type RawData string
