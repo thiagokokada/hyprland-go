@@ -32,8 +32,6 @@ func MustClient() *EventClient {
 // Initiate a new event client.
 // Receive as parameters a socket that is generally localised in
 // '$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock'.
-// The ctx ([context.Context]) parameter is passed to the underlying socket to
-// allow cancellations and timeouts for the Hyprland event socket.
 func NewClient(socket string) (*EventClient, error) {
 	conn, err := net.Dial("unix", socket)
 	if err != nil {
