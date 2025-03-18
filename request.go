@@ -24,199 +24,6 @@ const (
 var jsonReqHeader = []byte{'j', '/'}
 var reqSep = []byte{' ', ';'}
 
-func prepareRequest(buf *bytes.Buffer, command string, param string, jsonResp bool) int {
-	if jsonResp {
-		buf.Write(jsonReqHeader)
-	}
-	buf.WriteString(command)
-	buf.WriteByte(reqSep[0])
-	buf.WriteString(param)
-	buf.WriteByte(reqSep[1])
-
-	return buf.Len()
-}
-
-func prepareRequests(command string, params []string, jsonResp bool) (requests []RawRequest, err error) {
-	if command == "" {
-		// Panic since this is not supposed to happen, i.e.: only by
-		// misuse since this function is internal
-		panic("empty command")
-	}
-
-	// Buffer that will store the temporary prepared request
-	buf := bytes.NewBuffer(nil)
-	bufErr := func() error {
-		return fmt.Errorf(
-			"command is too long (%d>=%d): %s",
-			buf.Len(),
-			bufSize,
-			buf.String(),
-		)
-	}
-
-	switch len(params) {
-	case 0:
-		if jsonResp {
-			buf.Write(jsonReqHeader)
-		}
-		buf.WriteString(command)
-
-		if buf.Len() > bufSize {
-			return nil, bufErr()
-		}
-	case 1:
-		if jsonResp {
-			buf.Write(jsonReqHeader)
-		}
-		buf.WriteString(command)
-		buf.WriteByte(reqSep[0])
-		buf.WriteString(params[0])
-
-		if buf.Len() > bufSize {
-			return nil, bufErr()
-		}
-	default:
-		// Add [[BATCH]] to the buffer
-		buf.WriteString(batch)
-		// Initialise current length of buffer
-		curLen := buf.Len()
-
-		for _, param := range params {
-			// Get the current command + param length + request
-			// header and separators
-			cmdLen := len(command) + len(param) + len(reqSep)
-			if jsonResp {
-				cmdLen += len(jsonReqHeader)
-			}
-
-			// If batch + command length is bigger than bufSize,
-			// return an error since it will not fit the socket
-			if len(batch)+cmdLen > bufSize {
-				// Call prepare request for error
-				prepareRequest(buf, command, param, jsonResp)
-				return nil, bufErr()
-			}
-
-			// If the current length of the buffer + command +
-			// param is bigger than bufSize, we will need to split
-			// the request
-			if curLen+cmdLen > bufSize {
-				// Append current buffer contents to the
-				// requests array
-				requests = append(requests, buf.Bytes())
-
-				// Reset the current buffer and add [[BATCH]]
-				buf.Reset()
-				buf.WriteString(batch)
-			}
-
-			// Add the contents of the request to the buffer
-			curLen = prepareRequest(buf, command, param, jsonResp)
-		}
-	}
-	// Append any remaining buffer content to requests array
-	requests = append(requests, buf.Bytes())
-
-	return requests, nil
-}
-
-func parseResponse(raw RawResponse) (response []Response, err error) {
-	reader := bufio.NewReader(bytes.NewReader(raw))
-	scanner := bufio.NewScanner(reader)
-	scanner.Split(bufio.ScanLines)
-
-	for scanner.Scan() {
-		resp := strings.TrimSpace(scanner.Text())
-		if resp == "" {
-			continue
-		}
-		response = append(response, Response(resp))
-	}
-
-	if err := scanner.Err(); err != nil {
-		return response, err
-	}
-
-	return response, nil
-}
-
-func validateResponse(params []string, response []Response) ([]Response, error) {
-	// Empty response, something went terrible wrong
-	if len(response) == 0 {
-		return []Response{}, fmt.Errorf("%w: empty response", ErrorValidation)
-	}
-
-	// commands without parameters will have at least one return
-	want := max(len(params), 1)
-
-	// we have a different number of requests and responses
-	if want != len(response) {
-		return response, fmt.Errorf(
-			"%w: want responses: %d, got: %d, responses: %v",
-			ErrorValidation,
-			want,
-			len(response),
-			response,
-		)
-	}
-
-	// validate that all responses are ok
-	for i, r := range response {
-		if r != "ok" {
-			return response, fmt.Errorf(
-				"%w: non-ok response from param: %s, response: %s",
-				ErrorValidation,
-				params[i],
-				r,
-			)
-		}
-	}
-
-	return response, nil
-}
-
-func parseAndValidateResponse(params []string, raw RawResponse) ([]Response, error) {
-	response, err := parseResponse(raw)
-	if err != nil {
-		return response, err
-	}
-	return validateResponse(params, response)
-}
-
-func unmarshalResponse[T any](response RawResponse, v *T) (T, error) {
-	if len(response) == 0 {
-		return *v, errors.New("empty response")
-	}
-
-	err := json.Unmarshal(response, &v)
-	if err != nil {
-		return *v, fmt.Errorf(
-			"error while unmarshal: %w, response: %s",
-			err,
-			response,
-		)
-	}
-	return *v, nil
-}
-
-func (c *RequestClient) doRequest(command string, params []string, jsonResp bool) (response RawResponse, err error) {
-	requests, err := prepareRequests(command, params, jsonResp)
-	if err != nil {
-		return nil, fmt.Errorf("error while preparing request: %w", err)
-	}
-
-	buf := bytes.NewBuffer(nil)
-	for _, req := range requests {
-		resp, err := c.RawRequest(req)
-		if err != nil {
-			return nil, fmt.Errorf("error while doing request: %w", err)
-		}
-		buf.Write(resp)
-	}
-
-	return buf.Bytes(), nil
-}
-
 // Initiate a new client or panic.
 // This should be the preferred method for user scripts, since it will
 // automatically find the proper socket to connect and use the
@@ -531,3 +338,197 @@ func (c *RequestClient) Workspaces() (w []Workspace, err error) {
 	}
 	return unmarshalResponse(response, &w)
 }
+
+func prepareRequest(buf *bytes.Buffer, command string, param string, jsonResp bool) int {
+	if jsonResp {
+		buf.Write(jsonReqHeader)
+	}
+	buf.WriteString(command)
+	buf.WriteByte(reqSep[0])
+	buf.WriteString(param)
+	buf.WriteByte(reqSep[1])
+
+	return buf.Len()
+}
+
+func prepareRequests(command string, params []string, jsonResp bool) (requests []RawRequest, err error) {
+	if command == "" {
+		// Panic since this is not supposed to happen, i.e.: only by
+		// misuse since this function is internal
+		panic("empty command")
+	}
+
+	// Buffer that will store the temporary prepared request
+	buf := bytes.NewBuffer(nil)
+	bufErr := func() error {
+		return fmt.Errorf(
+			"command is too long (%d>=%d): %s",
+			buf.Len(),
+			bufSize,
+			buf.String(),
+		)
+	}
+
+	switch len(params) {
+	case 0:
+		if jsonResp {
+			buf.Write(jsonReqHeader)
+		}
+		buf.WriteString(command)
+
+		if buf.Len() > bufSize {
+			return nil, bufErr()
+		}
+	case 1:
+		if jsonResp {
+			buf.Write(jsonReqHeader)
+		}
+		buf.WriteString(command)
+		buf.WriteByte(reqSep[0])
+		buf.WriteString(params[0])
+
+		if buf.Len() > bufSize {
+			return nil, bufErr()
+		}
+	default:
+		// Add [[BATCH]] to the buffer
+		buf.WriteString(batch)
+		// Initialise current length of buffer
+		curLen := buf.Len()
+
+		for _, param := range params {
+			// Get the current command + param length + request
+			// header and separators
+			cmdLen := len(command) + len(param) + len(reqSep)
+			if jsonResp {
+				cmdLen += len(jsonReqHeader)
+			}
+
+			// If batch + command length is bigger than bufSize,
+			// return an error since it will not fit the socket
+			if len(batch)+cmdLen > bufSize {
+				// Call prepare request for error
+				prepareRequest(buf, command, param, jsonResp)
+				return nil, bufErr()
+			}
+
+			// If the current length of the buffer + command +
+			// param is bigger than bufSize, we will need to split
+			// the request
+			if curLen+cmdLen > bufSize {
+				// Append current buffer contents to the
+				// requests array
+				requests = append(requests, buf.Bytes())
+
+				// Reset the current buffer and add [[BATCH]]
+				buf.Reset()
+				buf.WriteString(batch)
+			}
+
+			// Add the contents of the request to the buffer
+			curLen = prepareRequest(buf, command, param, jsonResp)
+		}
+	}
+	// Append any remaining buffer content to requests array
+	requests = append(requests, buf.Bytes())
+
+	return requests, nil
+}
+
+func parseResponse(raw RawResponse) (response []Response, err error) {
+	reader := bufio.NewReader(bytes.NewReader(raw))
+	scanner := bufio.NewScanner(reader)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		resp := strings.TrimSpace(scanner.Text())
+		if resp == "" {
+			continue
+		}
+		response = append(response, Response(resp))
+	}
+
+	if err := scanner.Err(); err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+func validateResponse(params []string, response []Response) ([]Response, error) {
+	// Empty response, something went terrible wrong
+	if len(response) == 0 {
+		return []Response{}, fmt.Errorf("%w: empty response", ErrorValidation)
+	}
+
+	// commands without parameters will have at least one return
+	want := max(len(params), 1)
+
+	// we have a different number of requests and responses
+	if want != len(response) {
+		return response, fmt.Errorf(
+			"%w: want responses: %d, got: %d, responses: %v",
+			ErrorValidation,
+			want,
+			len(response),
+			response,
+		)
+	}
+
+	// validate that all responses are ok
+	for i, r := range response {
+		if r != "ok" {
+			return response, fmt.Errorf(
+				"%w: non-ok response from param: %s, response: %s",
+				ErrorValidation,
+				params[i],
+				r,
+			)
+		}
+	}
+
+	return response, nil
+}
+
+func parseAndValidateResponse(params []string, raw RawResponse) ([]Response, error) {
+	response, err := parseResponse(raw)
+	if err != nil {
+		return response, err
+	}
+	return validateResponse(params, response)
+}
+
+func unmarshalResponse[T any](response RawResponse, v *T) (T, error) {
+	if len(response) == 0 {
+		return *v, errors.New("empty response")
+	}
+
+	err := json.Unmarshal(response, &v)
+	if err != nil {
+		return *v, fmt.Errorf(
+			"error while unmarshal: %w, response: %s",
+			err,
+			response,
+		)
+	}
+	return *v, nil
+}
+
+func (c *RequestClient) doRequest(command string, params []string, jsonResp bool) (response RawResponse, err error) {
+	requests, err := prepareRequests(command, params, jsonResp)
+	if err != nil {
+		return nil, fmt.Errorf("error while preparing request: %w", err)
+	}
+
+	buf := bytes.NewBuffer(nil)
+	for _, req := range requests {
+		resp, err := c.RawRequest(req)
+		if err != nil {
+			return nil, fmt.Errorf("error while doing request: %w", err)
+		}
+		buf.Write(resp)
+	}
+
+	return buf.Bytes(), nil
+}
+
