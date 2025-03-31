@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+// Returned if HYPRLAND_INSTANCE_SIGNATURE is empty.
 var ErrEmptyHis = errors.New("HYPRLAND_INSTANCE_SIGNATURE is empty")
 
 // Returns a Hyprland socket path.

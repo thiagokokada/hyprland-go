@@ -15,10 +15,16 @@ import (
 )
 
 var (
+	// Returned when the request command is too long, e.g., would not fit
+	// the request buffer.
 	ErrCommandTooLong = errors.New("command is too long")
-	ErrEmptyRequest   = errors.New("empty request")
-	ErrEmptyResponse  = errors.New("empty response")
-	ErrRequestTooBig  = errors.New("request too big")
+	// Returned when the request is empty.
+	ErrEmptyRequest = errors.New("empty request")
+	// Returned when Hyprland returns an empty response.
+	ErrEmptyResponse = errors.New("empty response")
+	// Returned when the request is too big, e.g., would not fit the
+	// request buffer.
+	ErrRequestTooBig = errors.New("request too big")
 )
 
 // Initiate a new client or panic.
@@ -68,7 +74,6 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 		}
 	}()
 
-	// Send the request to the socket
 	if len(request) > bufSize {
 		return nil, fmt.Errorf(
 			"%w (%d>%d): %s",
@@ -81,6 +86,7 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 
 	writer := bufio.NewWriter(conn)
 
+	// Send the request to the socket
 	_, err = writer.Write(request)
 	if err != nil {
 		return nil, fmt.Errorf("error while writing to socket: %w", err)
