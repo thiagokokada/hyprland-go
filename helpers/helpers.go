@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 )
 
-var ErrorEmptyHis = errors.New("HYPRLAND_INSTANCE_SIGNATURE is empty")
+var ErrEmptyHis = errors.New("HYPRLAND_INSTANCE_SIGNATURE is empty")
 
 // Returns a Hyprland socket path.
 func GetSocket(socket Socket) (string, error) {
 	his := os.Getenv("HYPRLAND_INSTANCE_SIGNATURE")
 	if his == "" {
-		return "", fmt.Errorf("%w, are you using Hyprland?", ErrorEmptyHis)
+		return "", fmt.Errorf("%w, are you using Hyprland?", ErrEmptyHis)
 	}
 
 	// https://github.com/hyprwm/Hyprland/blob/83a5395eaa99fecef777827fff1de486c06b6180/hyprctl/main.cpp#L53-L62
