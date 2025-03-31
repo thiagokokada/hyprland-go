@@ -231,7 +231,7 @@ func TestValidateResponse(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				assert.True(t, errors.Is(err, ErrorValidation))
+				assert.True(t, errors.Is(err, ErrValidation))
 			} else {
 				assert.NoError(t, err)
 			}

@@ -15,10 +15,16 @@ import (
 )
 
 var (
-	ErrorCommandTooLong = errors.New("command is too long")
-	ErrorEmptyRequest   = errors.New("empty request")
-	ErrorEmptyResponse  = errors.New("empty response")
-	ErrorRequestTooBig  = errors.New("request too big")
+	// Returned when the request command is too long, e.g., would not fit
+	// the request buffer.
+	ErrCommandTooLong = errors.New("command is too long")
+	// Returned when the request is empty.
+	ErrEmptyRequest = errors.New("empty request")
+	// Returned when Hyprland returns an empty response.
+	ErrEmptyResponse = errors.New("empty response")
+	// Returned when the request is too big, e.g., would not fit the
+	// request buffer.
+	ErrRequestTooBig = errors.New("request too big")
 )
 
 // Initiate a new client or panic.
@@ -53,7 +59,7 @@ func NewClient(socket string) *RequestClient {
 // response will generally be something different from "ok".
 func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, err error) {
 	if len(request) == 0 {
-		return nil, ErrorEmptyRequest
+		return nil, ErrEmptyRequest
 	}
 
 	// Connect to the request socket
@@ -68,11 +74,10 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 		}
 	}()
 
-	// Send the request to the socket
 	if len(request) > bufSize {
 		return nil, fmt.Errorf(
 			"%w (%d>%d): %s",
-			ErrorRequestTooBig,
+			ErrRequestTooBig,
 			len(request),
 			bufSize,
 			request,
@@ -81,6 +86,7 @@ func (c *RequestClient) RawRequest(request RawRequest) (response RawResponse, er
 
 	writer := bufio.NewWriter(conn)
 
+	// Send the request to the socket
 	_, err = writer.Write(request)
 	if err != nil {
 		return nil, fmt.Errorf("error while writing to socket: %w", err)
@@ -405,7 +411,7 @@ func prepareRequests(command string, params []string, jsonResp bool) (requests [
 	bufErr := func() error {
 		return fmt.Errorf(
 			"%w (%d>=%d): %s",
-			ErrorCommandTooLong,
+			ErrCommandTooLong,
 			buf.Len(),
 			bufSize,
 			buf.String(),
@@ -505,7 +511,7 @@ func parseResponse(raw RawResponse) (response []Response, err error) {
 func validateResponse(params []string, response []Response) ([]Response, error) {
 	// Empty response, something went terrible wrong
 	if len(response) == 0 {
-		return []Response{}, fmt.Errorf("%w: empty response", ErrorValidation)
+		return []Response{}, fmt.Errorf("%w: empty response", ErrValidation)
 	}
 
 	// commands without parameters will have at least one return
@@ -515,7 +521,7 @@ func validateResponse(params []string, response []Response) ([]Response, error) 
 	if want != len(response) {
 		return response, fmt.Errorf(
 			"%w: want responses: %d, got: %d, responses: %v",
-			ErrorValidation,
+			ErrValidation,
 			want,
 			len(response),
 			response,
@@ -527,7 +533,7 @@ func validateResponse(params []string, response []Response) ([]Response, error) 
 		if r != "ok" {
 			return response, fmt.Errorf(
 				"%w: non-ok response from param: %s, response: %s",
-				ErrorValidation,
+				ErrValidation,
 				params[i],
 				r,
 			)
@@ -548,7 +554,7 @@ func parseAndValidateResponse(params []string, raw RawResponse) ([]Response, err
 
 func unmarshalResponse[T any](response RawResponse, v *T) (T, error) {
 	if len(response) == 0 {
-		return *v, ErrorEmptyResponse
+		return *v, ErrEmptyResponse
 	}
 
 	err := json.Unmarshal(response, &v)
